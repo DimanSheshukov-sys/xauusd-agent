@@ -1,0 +1,82 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LEARNING_v1 · XAUUSD Elliott Agent</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E"><link rel="stylesheet" href="../magic.css"></head><body><nav class="top"><b>XAUUSD ELLIOTT AGENT</b><a href="../index.html">LIVE</a><a href="../reports/TRADE_JOURNAL.html">Журнал сделок</a><a href="../reports/index.html">Отчёты</a><a href="../docs/index.html">Документы</a><a href="../data/">Данные</a></nav><main><div class="doc"><h1>LEARNING v1 — классификация ошибок и калибровка (§63–66)</h1>
+<p>Сформировано: 2026-09-16 10:19 UTC • freeze SHA-256: <code>560dbb724b744c11</code> • Правила НЕ изменяются: все кандидаты pre-registered и ждут нового validation cycle.</p>
+<h2>research v2 (G_BASE47, PROXY)</h2>
+<ul>
+<li>сделок: <b>163</b> • WR 60.1% • PF 1.373 • Exp +0.1562R • Net +25.5R</li>
+<li>MAE среднее -0.783R • MFE среднее 0.978R</li>
+<li>tier калибровки (§63): <b>50+ → FULL CALIBRATION</b></li>
+</ul>
+<table><thead><tr><th>Класс ошибки (§66)</th><th>Кол-во</th></tr></thead><tbody>
+<tr><td>WIN</td><td>89</td></tr>
+<tr><td>REGIME ERROR: шум против позиции</td><td>44</td></tr>
+<tr><td>TRIGGER ERROR: вход против движения</td><td>20</td></tr>
+<tr><td>WIN-RUNNER-CANDIDATE</td><td>9</td></tr>
+<tr><td>EXECUTION ERROR: TP недосягаем / вход поздний</td><td>1</td></tr>
+</tbody></table>
+<h2>research v2 (G_PROD, PROXY)</h2>
+<ul>
+<li>сделок: <b>243</b> • WR 41.6% • PF 0.876 • Exp -0.0818R • Net -19.9R</li>
+<li>MAE среднее -1.136R • MFE среднее 1.299R</li>
+<li>tier калибровки (§63): <b>50+ → FULL CALIBRATION</b></li>
+</ul>
+<table><thead><tr><th>Класс ошибки (§66)</th><th>Кол-во</th></tr></thead><tbody>
+<tr><td>WIN-RUNNER-CANDIDATE</td><td>101</td></tr>
+<tr><td>REGIME ERROR: шум против позиции</td><td>70</td></tr>
+<tr><td>TRIGGER ERROR: вход против движения</td><td>51</td></tr>
+<tr><td>EXECUTION ERROR: TP недосягаем / вход поздний</td><td>21</td></tr>
+</tbody></table>
+<h2>walk-forward OOS</h2>
+<ul>
+<li>сделок: <b>57</b> • WR 64.9% • PF 1.813 • Exp +0.3160R • Net +18.0R</li>
+<li>MAE среднее -0.821R • MFE среднее 1.345R</li>
+<li>tier калибровки (§63): <b>50+ → FULL CALIBRATION</b></li>
+</ul>
+<table><thead><tr><th>Класс ошибки (§66)</th><th>Кол-во</th></tr></thead><tbody>
+<tr><td>WIN</td><td>23</td></tr>
+<tr><td>WIN-RUNNER-CANDIDATE</td><td>14</td></tr>
+<tr><td>REGIME ERROR: шум против позиции</td><td>11</td></tr>
+<tr><td>TRIGGER ERROR: вход против движения</td><td>7</td></tr>
+<tr><td>EXECUTION ERROR: TP недосягаем / вход поздний</td><td>2</td></tr>
+</tbody></table>
+<h2>forward OOS (реальное золото)</h2>
+<p>_файл отсутствует_</p>
+<h2>Сводные классы ошибок</h2>
+<table><thead><tr><th>Класс</th><th>Всего</th></tr></thead><tbody>
+<tr><td>REGIME ERROR: шум против позиции</td><td>125</td></tr>
+<tr><td>WIN-RUNNER-CANDIDATE</td><td>124</td></tr>
+<tr><td>WIN</td><td>112</td></tr>
+<tr><td>TRIGGER ERROR: вход против движения</td><td>78</td></tr>
+<tr><td>EXECUTION ERROR: TP недосягаем / вход поздний</td><td>24</td></tr>
+</tbody></table>
+<h2>Pre-registered кандидаты (НЕ применены)</h2>
+<table><thead><tr><th>ID</th><th>Изменение</th><th>Статус</th></tr></thead><tbody>
+<tr><td>H-TP</td><td>уменьшить TP до 0.8R ИЛИ ужесточить trigger до Donchian(6)</td><td>НЕ применено: walk-forward 365/90 на новом окне + costs (§65)</td></tr>
+<tr><td>H-TRIG</td><td>подтверждение входа: close &gt; EMA20(M15) на сигнальном баре</td><td>НЕ применено: pre-registration + отдельный OOS (§68–69)</td></tr>
+<tr><td>H-VOL</td><td>фильтр волатильности: ATR(M15) ≤ 75-го перцентиля за 200 баров</td><td>НЕ применено: ablation → walk-forward → OOS (§68)</td></tr>
+<tr><td>H-RUN</td><td>исследовать runner-ветку: trailed stop после +1R</td><td>НЕ применено: отдельная frozen branch, не трогая текущую (§25)</td></tr>
+</tbody></table>
+<h2>Протокол следующего шага (§65)</h2>
+<ol>
+<li>OBSERVATION — этот отчёт;</li>
+<li>ERROR CLASSIFICATION — таблица выше;</li>
+<li>HYPOTHESIS — кандидаты выше;</li>
+<li>PRE-REGISTERED RULE — зафиксировать в <code>PARAMETER_FREEZE_vN</code> до прогона;</li>
+<li>BACKTEST → VALIDATION → OOS на данных, которых не было в этом отчёте;</li>
+<li>ACCEPT / REJECT / NEEDS MORE DATA.</li>
+</ol>
+<p><b>Запрещено:</b> менять правила по итогам этого отчёта (§64); калибровать по Final OOS; менять stop/target задним числом (§70).</p></div></main><footer>spec v1.8 · freeze v2 · engine v2 · собрано 2026-09-16 10:46 UTC<br>build 260916-89364b · не является инвестиционной рекомендацией.</footer><script>
+(function(){
+  var t = localStorage.getItem("xauusd_theme");
+  if (t === "tech") document.documentElement.classList.add("tech");
+  window.toggleTheme = function(){
+    var on = document.documentElement.classList.toggle("tech");
+    localStorage.setItem("xauusd_theme", on ? "tech" : "magic");
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = on ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  };
+  document.addEventListener("DOMContentLoaded", function(){
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = document.documentElement.classList.contains("tech") ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  });
+})();
+</script></body></html>

@@ -1,0 +1,50 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DATA_QUALITY_v1 · XAUUSD Elliott Agent</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E"><link rel="stylesheet" href="../magic.css"></head><body><nav class="top"><b>XAUUSD ELLIOTT AGENT</b><a href="../index.html">LIVE</a><a href="../reports/TRADE_JOURNAL.html">Журнал сделок</a><a href="../reports/index.html">Отчёты</a><a href="../docs/index.html">Документы</a><a href="../data/">Данные</a></nav><main><div class="doc"><h1>DATA QUALITY v1 — аудит источников</h1>
+<p>ENGINE v3.0 · PARAMETERS v2.3-560dbb72 · DATA D2026.09.16 · REPORT v2.0</p>
+<p><b>DATA SOURCE:</b> PROXY_PAXG · <b>VALIDATION STATUS:</b> PROXY · ⚠ Results are based on proxy data and must not be interpreted as validated XAUUSD performance. · ⚠ REAL XAUUSD validation unavailable</p>
+<p><b>DATA SOURCE:</b> FUTURES_GC · <b>VALIDATION STATUS:</b> NOT VERIFIED (futures, supplementary) · ⚠ REAL XAUUSD validation unavailable</p>
+<p>⚠ Results are based on proxy data and must not be interpreted as validated XAUUSD performance.</p>
+<p><b>REAL XAUUSD validation unavailable</b> — спот-источник в среде отсутствует; все performance-метрики проекта помечены как PROXY до его подключения.</p>
+<h2>1. Аудит наборов</h2>
+<table><thead><tr><th>Источник</th><th>ТФ</th><th>Баров</th><th>Период (UTC)</th><th>Дубли</th><th>Гэпы</th><th>Макс гэп, ч</th><th>Некорректный OHLC</th><th>Weekend-бары</th><th>Макс ход, ATR</th><th>Скачков &gt;8 ATR</th></tr></thead><tbody>
+<tr><td>PROXY_PAXG</td><td>M15</td><td>116,330</td><td>2022-01-24 00:00 → 2026-09-15 19:30</td><td>0</td><td>243</td><td>48.2</td><td>0</td><td>0</td><td>11.8</td><td>26</td></tr>
+<tr><td>PROXY_PAXG</td><td>H1</td><td>35,698</td><td>2021-01-01 00:00 → 2026-09-15 19:00</td><td>0</td><td>303</td><td>49.0</td><td>0</td><td>0</td><td>9.0</td><td>3</td></tr>
+<tr><td>FUTURES_GC</td><td>M15</td><td>3,745</td><td>2026-07-19 22:00 → 2026-09-15 19:20</td><td>0</td><td>40</td><td>79.2</td><td>0</td><td>64</td><td>8.0</td><td>0</td></tr>
+<tr><td>FUTURES_GC</td><td>H1</td><td>11,279</td><td>2024-09-25 19:00 → 2026-09-15 19:20</td><td>0</td><td>507</td><td>80.0</td><td>0</td><td>158</td><td>6.9</td><td>0</td></tr>
+<tr><td>FUTURES_GC</td><td>D1</td><td>6,535</td><td>2000-08-30 04:00 → 2026-09-15 04:00</td><td>0</td><td>1434</td><td>120.0</td><td>441</td><td>0</td><td>8.1</td><td>1</td></tr>
+</tbody></table>
+<h2>2. Допущения по спредам и издержкам</h2>
+<ul>
+<li><b>PROXY_PAXG:</b> биржевой стакан Binance, спред ≈ 0.01–0.05 USD; в моделях консервативно 0.40–0.60 USD</li>
+<li><b>FUTURES_GC:</b> спред фьючерса не моделируется (данные OHLC); издержки те же 0.52 USD round-trip</li>
+<li><b>REAL_XAUUSD:</b> недоступен; при подключении — живой спред брокера</li>
+</ul>
+<h2>3. Сравнение PAXG ↔ GC=F (overlap по дневным закрытиям)</h2>
+<ul>
+<li>дней в overlap: 506</li>
+<li>корреляция дневных доходностей: <b>0.9684</b></li>
+<li>базис PAXG−GC: медиана -11.64 USD, средний |базис| 19.70 USD, макс |базис| 143.05 USD</li>
+<li>шум базиса (|базис − медиана|): средний 16.92 USD</li>
+</ul>
+<p>Вывод: PAXG и GC=F движутся почти синхронно по доходностям, но базис шумный → PAXG пригоден как proxy для структуры и исследования, <b>не</b> как подтверждение XAUUSD.</p>
+<h2>4. Статус источников</h2>
+<table><thead><tr><th>Источник</th><th>Доступен</th><th>Роль</th><th>Validation status</th></tr></thead><tbody>
+<tr><td>REAL_XAUUSD</td><td>❌ нет</td><td>основной при подключении</td><td>VERIFIED (после подключения)</td></tr>
+<tr><td>PROXY_PAXG</td><td>✅</td><td>research / proxy only</td><td>PROXY</td></tr>
+<tr><td>FUTURES_GC</td><td>✅</td><td>supplementary validation</td><td>NOT VERIFIED</td></tr>
+</tbody></table>
+<p>Правило: статистика разных источников <b>не смешивается</b> в одном агрегированном показателе; каждая таблица эффективности помечена своим источником.</p></div></main><footer>spec v1.8 · freeze v2 · engine v2 · собрано 2026-09-16 10:46 UTC<br>build 260916-89364b · не является инвестиционной рекомендацией.</footer><script>
+(function(){
+  var t = localStorage.getItem("xauusd_theme");
+  if (t === "tech") document.documentElement.classList.add("tech");
+  window.toggleTheme = function(){
+    var on = document.documentElement.classList.toggle("tech");
+    localStorage.setItem("xauusd_theme", on ? "tech" : "magic");
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = on ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  };
+  document.addEventListener("DOMContentLoaded", function(){
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = document.documentElement.classList.contains("tech") ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  });
+})();
+</script></body></html>

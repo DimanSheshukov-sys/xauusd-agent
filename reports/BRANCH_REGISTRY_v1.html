@@ -1,0 +1,38 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BRANCH_REGISTRY_v1 · XAUUSD Elliott Agent</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E"><link rel="stylesheet" href="../magic.css"></head><body><nav class="top"><b>XAUUSD ELLIOTT AGENT</b><a href="../index.html">LIVE</a><a href="../reports/TRADE_JOURNAL.html">Журнал сделок</a><a href="../reports/index.html">Отчёты</a><a href="../docs/index.html">Документы</a><a href="../data/">Данные</a></nav><main><div class="doc"><h1>РЕЕСТР ВЕТОК v1 — жизненный цикл</h1>
+<p>freeze SHA-256: <code>560dbb724b744c11</code> · обновлено: 2026-09-16 · ведёт агент.</p>
+<table><thead><tr><th>Branch</th><th>Статус</th><th>Дата решения</th><th>Обоснование</th></tr></thead><tbody>
+<tr><td><code>B01_LONG_CORE</code></td><td><b>active</b></td><td>2026-09-16</td><td>база v2: N=21, WR 66.7%, Exp +0.284R; forward-подтверждение ожидается</td></tr>
+<tr><td><code>B02_LONG_EMA200_FIBOFF</code></td><td><b>active</b></td><td>2026-09-16</td><td>база v2: N=13, WR 76.9%, Exp +0.496R; малый N — следить за CI</td></tr>
+<tr><td><code>B04_LONG_EXTW3_RSI</code></td><td><b>active</b></td><td>2026-09-16</td><td>база v2: N=90, WR 62.2%, Exp +0.204R — основная по объёму</td></tr>
+<tr><td><code>B03_LONG_W3A_HV</code></td><td><b>retired</b></td><td>2026-09-16</td><td>N=19, WR 47.4%, Exp −0.095R: класс W3-A не подтверждён (канон §9 не воспроизвёлся)</td></tr>
+<tr><td><code>B05_SHORT_CORE</code></td><td><b>retired</b></td><td>2026-09-16</td><td>N=5 в базе v2, Exp отрицательный; SHORT не воспроизводится</td></tr>
+<tr><td><code>B06_SHORT_RSI_FIBOFF</code></td><td><b>retired</b></td><td>2026-09-16</td><td>N=2, Exp −1.105R; канон §16 (PF 2.25) не воспроизвёлся</td></tr>
+<tr><td><code>B07_SHORT_H4_ALIGNED</code></td><td><b>retired</b></td><td>2026-09-16</td><td>N=18, WR 50.0%, Exp −0.070R; канон §48 не воспроизвёлся</td></tr>
+<tr><td><code>ABC</code></td><td><b>research</b></td><td>2026-09-16</td><td>коррекции размечаются, не торгуются (§6/§10)</td></tr>
+<tr><td><code>FAILED_FIFTH</code></td><td><b>research</b></td><td>2026-09-16</td><td>только причинная разметка, без торговли (§6)</td></tr>
+<tr><td><code>H-MTF-ALIGN</code></td><td><b>candidate</b></td><td>2026-09-16</td><td>pre-registered (freeze v2.2): вход при согласии H4+M15+M5; ждёт walk-forward</td></tr>
+</tbody></table>
+<h2>Критерии перехода</h2>
+<ul>
+<li>active → retired: Exp &lt; 0 при N ≥ 20 в базе ИЛИ forward-выборке, либо 95% CI для Exp исключает 0;</li>
+<li>candidate → active: только после walk-forward 365/90 с positive OOS и N ≥ 50 (§63–65);</li>
+<li>research → candidate: формальное причинное определение + pre-registration в freeze;</li>
+<li>retired → candidate: только новая pre-registered гипотеза и новые данные, не прежние.</li>
+</ul>
+<h2>Правило ведения</h2>
+<p>Статус меняется только записью в этом реестре с датой и причиной; одновременное изменение правил ветки и её статуса запрещено (§64). Реестр публикуется на сайте в каталоге отчётов.</p></div></main><footer>spec v1.8 · freeze v2 · engine v2 · собрано 2026-09-16 10:46 UTC<br>build 260916-89364b · не является инвестиционной рекомендацией.</footer><script>
+(function(){
+  var t = localStorage.getItem("xauusd_theme");
+  if (t === "tech") document.documentElement.classList.add("tech");
+  window.toggleTheme = function(){
+    var on = document.documentElement.classList.toggle("tech");
+    localStorage.setItem("xauusd_theme", on ? "tech" : "magic");
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = on ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  };
+  document.addEventListener("DOMContentLoaded", function(){
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = document.documentElement.classList.contains("tech") ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  });
+})();
+</script></body></html>

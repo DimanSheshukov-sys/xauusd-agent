@@ -1,0 +1,218 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Аудит исполнимости и данных · XAUUSD Elliott Agent</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E"><link rel="stylesheet" href="../magic.css"></head><body><nav class="top"><b>XAUUSD ELLIOTT AGENT</b><a href="../index.html">LIVE</a><a href="../reports/TRADE_JOURNAL.html">Журнал сделок</a><a href="../reports/index.html">Отчёты</a><a href="../docs/index.html">Документы</a><a href="../data/">Данные</a></nav><main><div class="doc"><h1>XAUUSD ELLIOTT TRADING AGENT — приём спецификации и аудит исполнимости</h1>
+<p>Дата аудита: <b>2026-09-16</b> • Канон: <code>MASTER_SPEC_v1.8.md</code> (86 разделов, 3001 строка, сохранён <b>дословно</b>, без правок)</p>
+<p>Роль этого файла: рабочий аудит. Он <b>не изменяет канон</b> — только фиксирует, что нужно для его исполнения.</p>
+<hr>
+<h2>1. Статус приёма</h2>
+<p>Спецификация принята как основной системный документ. Все её правила (gates G00–G15, State Machine S00–S98, Absolute Rules 1–20, запреты §70) считаются действующими.</p>
+<p><b>Чего у меня нет (важно для честности):</b></p>
+<table><thead><tr><th>Отсутствует</th><th>Последствие</th></tr></thead><tbody>
+<tr><td>Ваш dataset <code>XAU/USD M15 2022-01-24 → 2026-09-11</code> (≈109 812 баров)</td><td>Не могу воспроизвести §47–48</td></tr>
+<tr><td>Код прежнего engine (Elliott labeler, branch registry, backtester)</td><td>Не могу воспроизвести §49–53</td></tr>
+<tr><td>Branch registry с ID/параметрами/датами freeze</td><td>G06 формально не проходим: «зарегистрированной branch нет»</td></tr>
+<tr><td>Провенанс цифр §9, §14, §16, §17, §51, §52</td><td>Принимаются как declared evidence, не как verified</td></tr>
+<tr><td>Formal causal Elliott labeling algorithm</td><td>G03/G04 не могут быть пройдены воспроизводимо</td></tr>
+</tbody></table>
+<p>Все числа ниже, полученные мной самостоятельно, помечены как <b>[замер]</b>.</p>
+<hr>
+<h2>2. Аудит данных XAUUSD в этой среде [замер]</h2>
+<table><thead><tr><th>Источник</th><th>Инструмент</th><th>M15</th><th>H1</th><th>D1</th><th>Глубина</th><th>Пригодность</th></tr></thead><tbody>
+<tr><td>TradingView скринер</td><td><code>OANDA:XAUUSD</code>, <code>TVC:GOLD</code>, <code>FX:XAUUSD</code>, <code>FOREXCOM:XAUUSD</code>, <code>FX_IDC:XAUUSD</code></td><td>✅ индикаторы</td><td>✅</td><td>✅</td><td>текущий срез + EMA200/RSI/ATR на любом ТФ</td><td><b>основной для live-контекста</b></td></tr>
+<tr><td>TradingView WebSocket</td><td><code>OANDA:XAUUSD</code></td><td>✅ live bid/ask/lp</td><td>✅</td><td>—</td><td>realtime</td><td><b>основной для live-цены и спреда</b></td></tr>
+<tr><td>TradingView WS история</td><td><code>create_series</code></td><td>❌ 0 баров</td><td>❌</td><td>❌</td><td>—</td><td>непригодно (§G00 → анонимная история режется)</td></tr>
+<tr><td>Yahoo</td><td><code>GC=F</code> (фьючерс COMEX)</td><td>✅ 4 548 баров</td><td>✅ 13 737 баров</td><td>✅ 2 335 (2000–2009), 1 687 (2020–2026)</td><td><b>15m — только 60 дней</b>, 1h — 730 дней</td><td>M15-история для walk-forward <b>недостаточна</b></td></tr>
+<tr><td>Yahoo</td><td><code>XAUUSD=X</code></td><td>❌ 404</td><td>❌</td><td>❌</td><td>—</td><td>нет</td></tr>
+<tr><td>Binance</td><td><code>PAXGUSDT</code> (токенизированное золото)</td><td>✅ с 2020-09</td><td>✅</td><td>✅</td><td><b>≈162 000 M15-баров на период 2022–2026</b></td><td>глубокая M15-история, но <b>это прокси, не спот XAUUSD</b></td></tr>
+<tr><td>Dukascopy</td><td>спот XAUUSD bi5</td><td>❌ HTTP 503</td><td>❌</td><td>❌</td><td>—</td><td>заблокирован из этой среды</td></tr>
+</tbody></table>
+<p><b>Вывод по данным:</b> воспроизвести §47 (109 812 M15-бара спот XAUUSD за 2022–2026) из этой среды <b>нельзя напрямую</b>. Варианты: (а) вы передаёте CSV/parquet датасет; (б) работаем на <code>PAXGUSDT</code> M15 как прокси с явной пометкой о базисном риске; (в) собираем M15 из Yahoo по 60-дневным окнам — хватит только на 2 месяца, для walk-forward мало.</p>
+<p><b>[замер] Живой снимок XAUUSD (OANDA, 2026-09-15 19:20 UTC):</b></p>
+<pre><code>
+lp = 4300.225   bid 4300.03 / ask 4300.43  → СПРЕД = 0.40 USD
+D1 : close 4300.96  EMA200 4319.88  EMA50 4345.98  RSI 44.64  ATR(14) 101.42  Rec −0.29  Perf.1M −1.20%
+H4 : close 4301.02  EMA200 4367.76  RSI 43.98  MACD −25.12  Rec −0.24
+H1 : close 4301.02  EMA200 4366.87  RSI 52.16  Rec −0.09
+M15: close 4300.21  ATR(14) 7.27  RSI 57.43  Rec +0.40
+Контекст: DXY 99.634 (+0.17%), выше своей EMA200 99.55 → умеренно в пользу USD, против золота
+</code></pre>
+<hr>
+<h2>3. Критическое внутреннее расхождение в каноне ⚠️</h2>
+<p><b>§47 frozen baseline</b> (тот, на котором получены headline-цифры §48: N=1113, WR 54.4%, PF 1.20, +0.090R):</p>
+<pre><code>
+stop = 2.5 ATR   |   target = 1.0R   |   max hold = 96 M15 bars
+</code></pre>
+<p><b>§25 / §82 production candidate</b> (то, что объявлено финальной веткой):</p>
+<pre><code>
+SL = 1 ATR   |   TP = 1.5R   |   max hold — не указан
+</code></pre>
+<p>Это <b>две разные execution geometry</b>. Следствие:</p>
+<blockquote>Главный quantitative evidence системы (+0.090R, N≈1113) принадлежит конфигурации <code>2.5 ATR / 1.0R / 96 bars</code>,</blockquote>
+<blockquote>а не объявленному production candidate <code>1 ATR / 1.5R</code>.</blockquote>
+<p>При breakeven-WR они разные: <code>1.0R TP / 2.5 ATR SL</code> ≠ <code>1.5R TP / 1 ATR SL</code>. Переносить PF/WR/Expectancy с одной геометрии на другую нельзя — это ровно то, что §17 запрещает («нельзя объединять directional evidence + exit evidence»).</p>
+<p><b>Требуется решение (до end-to-end теста):</b></p>
+<ol>
+<li>либо объявить <code>2.5 ATR / 1.0R / 96 bars</code> официальной production geometry и править §25/§82;</li>
+<li>либо прогнать walk-forward заново на <code>1 ATR / 1.5R</code> и получить <b>собственные</b> N/PF/Expectancy для production candidate.</li>
+</ol>
+<p>Второй вариант корректнее, но требует данных (см. §2).</p>
+<hr>
+<h2>4. Статистическая значимость заявленных результатов [расчёт]</h2>
+<p>Геометрия <code>TP=1.5R / SL=1R</code> → breakeven WR = 40 %. SD на сделку ≈ 1.22–1.25R.</p>
+<p>t-критерий: <code>t = expectancy · √N / SD</code>.</p>
+<table><thead><tr><th>Evidence из канона</th><th>N</th><th>Expectancy</th><th>t</th><th>p</th><th>Вердикт</th></tr></thead><tbody>
+<tr><td>§48 H4-aligned frozen</td><td>1113</td><td>+0.090R</td><td>2.42</td><td>0.015</td><td><b>значимо</b></td></tr>
+<tr><td>§48 adaptive weights</td><td>1055</td><td>+0.077R</td><td>2.02</td><td>0.043</td><td>значимо (но хуже frozen)</td></tr>
+<tr><td>§49 Elliott W5 all-sample</td><td>410</td><td>+0.201R</td><td>3.26</td><td>0.001</td><td><b>значимо</b></td></tr>
+<tr><td>§49 Elliott W5 final OOS</td><td>103</td><td>+0.092R</td><td>0.75</td><td>0.451</td><td>не значимо</td></tr>
+<tr><td>§50 EMA200 ablation OOS</td><td>60</td><td>+0.083R</td><td>0.52</td><td>0.604</td><td>не значимо</td></tr>
+<tr><td>§17 SHORT exit test</td><td>41</td><td>+0.220R</td><td>1.13</td><td>0.260</td><td>не значимо</td></tr>
+<tr><td>§14 LONG EMA200+FibOFF OOS</td><td>26</td><td>+0.346R</td><td>1.42</td><td>0.157</td><td>не значимо</td></tr>
+<tr><td>§16 SHORT RSI+FibOFF final</td><td>15</td><td>+0.500R</td><td>1.58</td><td>0.114</td><td>слабо</td></tr>
+<tr><td>§19 EMA200+Wyckoff</td><td>8</td><td>−0.375R</td><td>−0.98</td><td>0.327</td><td>не значимо</td></tr>
+<tr><td>§9 W3 non-extended (global)</td><td>57</td><td>+0.491R</td><td>3.02</td><td>0.003</td><td><b>значимо</b></td></tr>
+</tbody></table>
+<p><b>Сколько сделок нужно для 95 %-ной уверенности, что edge &gt; 0:</b></p>
+<table><thead><tr><th>Expectancy</th><th>Требуемый N</th></tr></thead><tbody>
+<tr><td>+0.090R (baseline §48)</td><td><b>≈729</b></td></tr>
+<tr><td>+0.092R (W5 final OOS)</td><td>≈698</td></tr>
+<tr><td>+0.083R (EMA200 ablation)</td><td>≈856</td></tr>
+<tr><td>+0.201R (W5 all-sample)</td><td>≈148</td></tr>
+<tr><td>+0.346R (LONG FibOFF)</td><td><b>≈50</b></td></tr>
+<tr><td>+0.500R (SHORT RSI+FibOFF)</td><td><b>≈23</b></td></tr>
+</tbody></table>
+<p>Прямое следствие для §60 («SAMPLE SUFFICIENT»): <b>числовой критерий сейчас отсутствует</b>, а он легко выводится — N ≥ (1.96·SD/expectancy)². Предлагаю зафиксировать его в каноне как формулу, а не как константу.</p>
+<hr>
+<h2>5. Стоимость сделки — главный риск для edge +0.090R [замер]</h2>
+<p>Реальный наблюдаемый спред OANDA XAUUSD сейчас: <b>0.40 USD</b> (bid 4300.03 / ask 4300.43).</p>
+<p>R при <code>SL = 1 ATR(M15)</code> ≈ <b>7.3–8.0 USD</b> [замер ATR(14) M15: TV=7.27, по GC=F медиана 8.00 за 60 дней].</p>
+<table><thead><tr><th>Спред + комиссия</th><th>В USD</th><th>В R</th><th>Доля от edge +0.090R</th></tr></thead><tbody>
+<tr><td>0.15 + 0</td><td>0.15</td><td>0.019R</td><td>21 %</td></tr>
+<tr><td>0.25 + 0.06</td><td>0.31</td><td>0.039R</td><td>43 %</td></tr>
+<tr><td><b>0.40 (наблюдаемый) + 0.06</b></td><td><b>0.46</b></td><td><b>0.058R</b></td><td><b>64 %</b></td></tr>
+<tr><td>0.50 + 0.10</td><td>0.60</td><td>0.075R</td><td>83 %</td></tr>
+</tbody></table>
+<p><b>Вывод:</b> при тонком edge (+0.090R) транзакционные издержки съедают от пятой части до почти всего ожидания. Любой end-to-end тест <b>обязан</b> включать модель costs (спред + комиссия + slippage), иначе результат непригоден для вывода о production. В §28 и §47 cost model не описана — это gap.</p>
+<p>Дополнительно: <code>TP = 1.5R</code> при R = 1 ATR(M15) ≈ 8 USD даёт цель ≈ 12 USD на золоте за 4300 — это очень короткий горизонт, где доля издержек максимальна. Геометрия §47 (2.5 ATR SL) в этом смысле устойчивее к costs.</p>
+<hr>
+<h2>6. Незафиксированные параметры (gap analysis)</h2>
+<p>Что должно быть заморожено и записано до start end-to-end walk-forward. Без этого §59/§60 не выполняются по определению.</p>
+<p><b>A. Elliott (G03, G04, S04–S05) — самый большой пробел</b></p>
+<ol>
+<li>Алгоритм детекции свингов: порядок фрактала / мин. баров между экстремумами / мин. размер волны (в ATR или в %).</li>
+<li>Правила валидности импульса: W2 не ретрейсит 100 % W1; W3 не самая короткая; W4 не заходит на территорию W1 — в каких единицах и с каким допуском.</li>
+<li>Степень вложенности (wave degree): как M15-волны соотносятся с H1/H4/D1; какой degree считается «рабочим».</li>
+<li>Момент, когда волна считается <b>causally завершённой</b> (без будущего подтверждения) — правило «wave confirmed after N bars / after break of X».</li>
+<li>Как обрабатываются альтернативные counts: policy resolution (§37 требует, но алгоритма нет).</li>
+<li>Determinism: одинаковый ли label получается при прогоне истории целиком и при пошаговом online-прогоне (тест на look-ahead).</li>
+</ol>
+<p><b>B. W3 classification (G05, S06)</b></p>
+<ol>
+<li>Момент измерения <code>W3/W1</code>: по завершении W3 (как фиксируется?) или на текущем баре.</li>
+<li>Единицы: пункты, ATR, % — и на каком ТФ.</li>
+</ol>
+<p><b>C. Trigger и invalidation (G10, G11, S11–S12)</b></p>
+<ol>
+<li>Точное определение M15-trigger для каждой ветки (пробой уровня? закрытие бара? паттерн?).</li>
+<li>Формула structural invalidation (напр. «низ W4» / «1 ATR за W4» / «закрытие D1 ниже EMA200»).</li>
+<li>Правила для H1 refinement и M5 optional refinement — что именно они могут и не могут.</li>
+</ol>
+<p><b>D. Regime и confirmations (G07, G08)</b></p>
+<ol>
+<li>Определение «D1 EMA200 supportive»: цена &gt; EMA200? наклон? оба? за какой lookback? что при цене в пределах ±0.25 ATR от EMA200 (сейчас ровно этот случай: 4300.96 vs 4319.88, разница 0.19 ATR(D1)).</li>
+<li>RSI: период, ТФ, порог, направление сравнения (для SHORT и для Extended-W3 LONG).</li>
+<li><code>Fib ON/OFF</code>: формальное определение — что именно включается/выключается.</li>
+<li>Wyckoff: формальное правило, по которому в прежних тестах получалось <code>Wyckoff = True</code> (§51) — иначе результат невоспроизводим.</li>
+<li>Schiff: параметры pitchfork (реперные точки) — если остаётся research.</li>
+</ol>
+<p><b>E. Execution и costs (G12–G14, §25, §28)</b></p>
+<ol>
+<li>ATR: период и таймфрейм (M15? H1? D1?), на момент сигнала или на момент entry.</li>
+<li>Entry convention: §47 говорит «next M15 open» — распространяется ли это на все ветки v1.8.</li>
+<li><b>Cost model: спред, комиссия, slippage — обязательное дополнение.</b></li>
+<li>Max hold: 96 баров из §47 — сохраняется ли для production candidate.</li>
+<li>Определение R в деньгах, риск на сделку, учёт MaxDD в R или в %.</li>
+<li>Поведение при гэпах/переносе через выходные, rollover/swaps.</li>
+</ol>
+<p><b>F. Данные (G00)</b></p>
+<ol>
+<li>Source of record для XAUUSD (OANDA? другой брокер?), таймзона баров (broker time vs UTC), правила сессий и DST.</li>
+<li>Критерии «no missing critical data segment», допустимое число пропусков.</li>
+<li>Hash/версия датасета для воспроизводимости (§67 требует DATASET, но формат не определён).</li>
+</ol>
+<p><b>G. Методология валидации (§45, §60–§64)</b></p>
+<ol>
+<li>Числовой порог «SAMPLE SUFFICIENT» (см. §4 — предлагаю формулу).</li>
+<li>Критерии pass/fail для rolling stability (§62 даёт окна, но не пороги).</li>
+<li>Учёт множественных сравнений: §48 выбирает лучший из 3 вариантов, §9/§52 — full-sample срезы; нужна pre-registration и поправка (иначе лучшие OOS-цифры — это selected maxima).</li>
+<li>Разделение датасетов: пересекаются ли окна §47–48 с окнами §49–53? Если да — «component OOS» не независим от walk-forward.</li>
+<li>Календарь новостей (§43): источник и правило «extreme event risk».</li>
+</ol>
+<hr>
+<h2>7. Live-статус по §72 на момент аудита (демонстрация исполнения канона)</h2>
+<pre><code>
+DATA STATUS      = OK   (TV live + скринер; история M15 ограничена, см. §2)
+CAUSALITY STATUS = OK   (используются только закрытые/текущие бары, будущего нет)
+MTF STATUS       = OK   (D1 / H4 / H1 / M15 получены)
+
+ELLIOTT STRUCTURE = UNDEFINED  → формально воспроизводимого labeler нет (gap A1–A6)
+STRUCTURE TYPE    = UNDEFINED
+W3 CLASS          = UNAVAILABLE
+
+REGIME (D1 EMA200) = LONG: FAIL  (close 4300.96 &lt; EMA200 4319.88)
+                     SHORT: pass по направлению (цена ниже EMA200; H4 bearish: EMA200 4367.76, MACD −25.1)
+BRANCH             = NO REGISTERED BRANCH (реестр отсутствует) → по G06 это NO_TRADE
+
+PRIMARY SCENARIO    = не может быть построен без Elliott labeler
+TRIGGER             = n/a
+STRUCTURAL INVAL.   = n/a
+EXECUTION / TARGET  = геометрия неоднозначна (§3: 2.5 ATR/1.0R vs 1 ATR/1.5R)
+R:R                 = n/a
+
+FINAL DECISION = WAIT
+CURRENT STATE  = S91 WAIT_STRUCTURE (+ блокировка G06: нет реестра веток)
+REASON         = отсутствуют: (1) замороженный causal Elliott labeler, (2) branch registry,
+                 (3) однозначная execution geometry, (4) cost model.
+                 Отдельно: для production LONG закрыт G07 — цена ниже D1 EMA200.
+MODEL VERSION  = spec v1.8 / intake audit v1
+</code></pre>
+<p>Обратите внимание: даже при полной доступности рыночных данных решение <b>не может</b> быть LONG/SHORT — и это корректное поведение по §85 (RULE 16–18), а не «нерешительность».</p>
+<hr>
+<h2>8. Что можно сделать дальше</h2>
+<table><thead><tr><th>Вариант</th><th>Что делаю</th><th>Что нужно от вас</th></tr></thead><tbody>
+<tr><td><b>A. Заморозить спецификацию параметров</b></td><td>Составляю <code>PARAMETER_FREEZE_v1.md</code>: все 30 пунктов §6 с конкретными значениями по умолчанию, на ваше утверждение</td><td>Согласовать спорные пункты</td></tr>
+<tr><td><b>B. Построить causal Elliott labeler</b></td><td>Реализую детекцию свингов + правила W1–W5 + W3-классификатор + online/offline эквивалентность (тест на look-ahead)</td><td>Утвердить правила A1–A6</td></tr>
+<tr><td><b>C. End-to-end backtester + walk-forward</b></td><td>Движок по §44–48: gates, state machine, frozen params, cost model, метрики §54, rolling §62</td><td>Датасет XAUUSD M15 (или согласие на PAXG-прокси)</td></tr>
+<tr><td><b>D. Live-анализ по §72 по запросу</b></td><td>Каждый запрос → полный decision template с текущими данными TV</td><td>Список инструментов/ТФ и частота</td></tr>
+<tr><td><b>E. Разрешить расхождение §3</b></td><td>Прогнать обе геометрии (<code>2.5 ATR/1.0R/96</code> и <code>1 ATR/1.5R</code>) на одном датасете и сравнить с учётом costs</td><td>Датасет</td></tr>
+</tbody></table>
+<p>Рекомендуемая последовательность: <b>A → B → (C или E) → D</b>. Пропуск A и B делает C бессмысленным: тестировать нечего, правила не заморожены.</p>
+<hr>
+<h2>9. Файлы проекта</h2>
+<pre><code>
+xauusd_agent/
+├── MASTER_SPEC_v1.8.md      ← канон (дословно, только для чтения)
+├── INTAKE_AUDIT_v1.md       ← этот файл
+└── (далее: PARAMETER_FREEZE_v1.md, labeler/, backtest/, reports/)
+
+tradingview/                 ← инфраструктура данных (уже работает)
+├── tv_client.py             ← live-котировки TV, скринер, индикаторы на любом ТФ
+├── history.py               ← исторические свечи + stats + экспорт
+├── chart.py, report.py      ← SVG-графики и HTML-отчёты
+└── data/                    ← CSV-выгрузки
+</code></pre>
+<hr>
+<p><i>Данные публичные. Документ не является инвестиционной рекомендацией; он описывает исследовательский протокол.</i></p></div></main><footer>spec v1.8 · freeze v2 · engine v2 · собрано 2026-09-16 10:46 UTC<br>build 260916-89364b · не является инвестиционной рекомендацией.</footer><script>
+(function(){
+  var t = localStorage.getItem("xauusd_theme");
+  if (t === "tech") document.documentElement.classList.add("tech");
+  window.toggleTheme = function(){
+    var on = document.documentElement.classList.toggle("tech");
+    localStorage.setItem("xauusd_theme", on ? "tech" : "magic");
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = on ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  };
+  document.addEventListener("DOMContentLoaded", function(){
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = document.documentElement.classList.contains("tech") ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  });
+})();
+</script></body></html>
