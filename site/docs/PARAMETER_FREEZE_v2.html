@@ -1,0 +1,204 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PARAMETER FREEZE v2 (действующий) · XAUUSD Elliott Agent</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E"><link rel="stylesheet" href="../magic.css"></head><body><nav class="top"><b>XAUUSD ELLIOTT AGENT</b><a href="../index.html">LIVE</a><a href="../reports/TRADE_JOURNAL.html">Журнал сделок</a><a href="../reports/index.html">Отчёты</a><a href="../docs/index.html">Документы</a><a href="../data/">Данные</a></nav><main><div class="doc"><h1>PARAMETER FREEZE v2 — XAUUSD Elliott Trading Agent</h1>
+<p><b>Статус: PRE-REGISTERED, действует с 2026-09-16.</b> Заменяет <code>PARAMETER_FREEZE_v1.md</code> в частях,</p>
+<p>перечисленных ниже; всё остальное из v1 остаётся в силе без изменений.</p>
+<p>Решения приняты автономно (пользователь делегировал полномочия: «сделай всё самостоятельно»).</p>
+<p>Основание — <code>reports/EXPERIMENT_v2.md</code>, <code>reports/WALKFORWARD_v2.md</code>, <code>reports/EXPERIMENT_v3.md</code>.</p>
+<blockquote>⚠️ <b>Честная пометка о selection bias.</b> Правила v2 сформированы <b>по итогам</b> прогона на периоде</blockquote>
+<blockquote>2022-01-24 → 2026-09-15. Поэтому все цифры кандидата v2 на этом периоде — <b>in-sample по выбору правил</b></blockquote>
+<blockquote>и оптимистичны. Единственное валидное подтверждение — <b>forward OOS</b> (§4 ниже, требование §64).</blockquote>
+<hr>
+<h2>1. Изменения относительно v1</h2>
+<table><thead><tr><th>№</th><th>Что</th><th>v1</th><th><b>v2</b></th><th>Основание</th></tr></thead><tbody>
+<tr><td>1</td><td>Production geometry</td><td>не выбрана (расхождение §47 vs §25/§82)</td><td><b><code>G_BASE47</code>: SL 2.5 ATR / TP 1.0R / max hold 96 баров</b></td><td>§25/§82 (1 ATR / 1.5R) убыточна после издержек: Exp −0.082R, PF net 0.876, N=243. G_BASE47: Exp +0.156R, PF 1.373, p=0.043, 11/11 критериев §60</td></tr>
+<tr><td>2</td><td>Cost/R</td><td>не регламентирован</td><td><b>новый gate <code>G14a</code>: round_trip_cost / R ≤ 0.05</b></td><td>при 1 ATR cost/R = 0.07 → gate не пройден; при 2.5 ATR = 0.029 → пройден. Требует правки канона §10</td></tr>
+<tr><td>3</td><td>SHORT-ветки B05–B07</td><td>активны (P1)</td><td><b>DISABLED (P0)</b></td><td>N=20, PF net 0.706, Exp −0.174R; B06 значимо отрицательна (p=0.021). Канонные §16 (PF 2.25, N=15) и §48 не воспроизведены</td></tr>
+<tr><td>4</td><td>B03 W3 CLASS A (§13 high-conviction)</td><td>активна, приоритет 1</td><td><b>CONTEXT_ONLY</b></td><td>CLASS A: PF net 0.947, Exp −0.030R, N=49 против канонных PF 2.217</td></tr>
+<tr><td>5</td><td>B04 Extended-W3 + RSI (§24)</td><td>P0</td><td><b>активная LONG-ветка, P1</b></td><td>N=89, Exp +0.286R, PF 1.697, p=0.011 — сильнейшая изолированная ветка</td></tr>
+<tr><td>6</td><td>Event filter (§43)</td><td>не реализован</td><td><b>ON: FOMC decision + NFP, окно ±2h, блокирует только новые входы</b></td><td>93 события, 1.36% баров; абляция: Exp +0.2023R → <b>+0.2204R</b></td></tr>
+<tr><td>7</td><td>Wyckoff (§18/§51, gap D15)</td><td>не определён</td><td><b>формализован, CONTEXT ONLY</b> (gate запрещён §19)</td><td>vol_ratio ≥ 1.30 на окне [P4−10 … P4+3] к базе 200 баров + stopping ≥ 0.50. Диагноз: True N=42 PF 1.594 / False N=99 PF 1.467 — слабый наклон, gate не оправдан</td></tr>
+<tr><td>8</td><td>§26 SL-совместимость</td><td><code>tight</code> (временное)</td><td><b><code>tight</code> — канонично</b></td><td>трактовка <code>wide</code> даёт N=0 (неторгуема при 1 ATR), STRUCT-exit не наступает никогда</td></tr>
+<tr><td>9</td><td>Набор торгуемых веток</td><td>B01–B07</td><td><b>LONG_ONLY = B01, B02, B04</b> (B03 — контекст)</td><td>SHORT отключён (п.3); WF-OOS LONG_ONLY Exp +0.205R, Net +25.0R, p=0.020</td></tr>
+<tr><td>10</td><td>Адаптивный отбор конфигурации</td><td>не применялся</td><td><b>ЗАПРЕЩЁН</b></td><td>WF с отбором внутри train: Exp выше (+0.316R), но Net R ниже (+18.0R против +25.0R) — повторяет вывод §48 «FROZEN &gt; ADAPTIVE»</td></tr>
+<tr><td>11</td><td>Данные</td><td>PAXG как source of record</td><td><b>PAXG = directional/robustness стенд; для production-валидации нужен спот XAUUSD M15</b></td><td>шум базиса PAXG−GC=F = 16.2 USD = <b>1.98 × ATR(M15)</b>; совпадение сигналов 2 из 9; при этом корреляция доходностей 0.9614 (M15) / 0.9288 (H1)</td></tr>
+<tr><td>12</td><td>Swing k</td><td>2.0</td><td><b>2.0 (без изменений)</b></td><td>чувствительность: k=1.5 и k=3.0 дают тот же знак edge; k не участвует в отборе (защита от мета-оверфиттинга)</td></tr>
+</tbody></table>
+<h2>2. Замороженная конфигурация v2 (полностью)</h2>
+<pre><code>
+DATA          : XAUUSD M15 (спот) — до его получения: PAXGUSDT M15 без выходных [PROXY]
+SWING         : causal ZigZag, K = 2.0 × ATR(14, M15), min_bars отключён, ATR на баре-экстремуме
+STRUCTURE     : IMPULSE_W5 (W1–W4 подтверждены) → forecast W5; ABC/Failed Fifth не торгуются
+VALIDITY      : R1 W2 не ретрейсит 100% W1 • R2 W4 не заходит на территорию W1 • R3 W4 короче W3
+                R4 «W3 не самая короткая» = PENDING (причинно непроверяема)
+W3 CLASS      : A &lt;1 | B 1–1.618 | C ≥1.618 (измеряется на confirm_idx пивота P4)
+BRANCHES      : B01_LONG_CORE (Fib ON), B02_LONG_EMA200_FIBOFF, B04_LONG_EXTW3_RSI (RSI H1 &gt; 50)
+PRIORITY      : B04 → B01 → B02  (специфические раньше общих; на системный итог не влияет)
+REGIME (G07)  : D1 close &gt; D1 EMA200 (последний ЗАКРЫТЫЙ дневной бар) — REQUIRED для LONG
+CONFIRM (G08) : B04 — RSI(14, H1) &gt; 50; Fib ON для B01: 0.382 ≤ ret2 ≤ 0.786 и 0.236 ≤ ret4 ≤ 0.5
+EVENT (G08a)  : вход запрещён в [FOMC/NFP − 2h … +2h]
+TRIGGER (G10) : причинный Donchian(8) breakout на M15 (close за max/min предыдущих 8 баров)
+INVALIDATION  : LONG — close &lt; L4; SL-совместимость `tight` (SL ≥ L4), иначе WAIT_RISK
+EXECUTION     : entry = open[i+1]; SL = 2.5 × ATR(14, M15); TP = 1.0R; max hold = 96 баров M15
+OHLC RESOLVE  : TP и SL в одном баре → SL FIRST (§28)
+COSTS         : 0.40 USD спред + 0.06 USD комиссия/сторону = 0.52 USD round-trip; gate G14a cost/R ≤ 0.05
+SETUP AGE     : ≤ 200 баров M15, иначе S19 NO_TRADE
+CONTEXT ONLY  : Wyckoff-флаг, W3 CLASS A, Schiff (не реализован), macro/DXY
+</code></pre>
+<h2>3. Результаты кандидата v2 (RESEARCH SAMPLE — не доказательство)</h2>
+<table><thead><tr><th>Метрика</th><th>Значение</th></tr></thead><tbody>
+<tr><td>N</td><td>141</td></tr>
+<tr><td>Win Rate</td><td>63.1%</td></tr>
+<tr><td>PF net / gross</td><td>1.573 / 1.712</td></tr>
+<tr><td>Expectancy net</td><td><b>+0.2204R</b></td></tr>
+<tr><td>Net R</td><td><b>+31.07R</b></td></tr>
+<tr><td>MaxDD</td><td>−9.93R (recovery 3.13)</td></tr>
+<tr><td>t / p</td><td>2.70 / <b>0.007</b></td></tr>
+<tr><td>Требуется N (95%)</td><td>74 → <b>SAMPLE SUFFICIENT</b></td></tr>
+<tr><td>Издержки съели</td><td>5.93R (19% от gross)</td></tr>
+<tr><td>Период</td><td>2022-02 → 2026-09 (PAXG PROXY)</td></tr>
+</tbody></table>
+<p>WF-OOS (отбор внутри train, 14 фолдов, сделки в 4): <code>LONG_ONLY|G_BASE47</code> статично — N=122, Exp +0.205R, Net +25.0R, p=0.020.</p>
+<h2>4. Forward OOS протокол (единственный путь к P3/P4)</h2>
+<pre><code>
+Старт           : первый бар после 2026-09-15 20:00 UTC
+Данные          : спот XAUUSD M15 (при отсутствии — PAXG с пометкой PROXY, promotion невозможен)
+Сигналы         : freeze в момент выдачи (S17 → S18, RULE 13), лог каждого решения по §72
+Изменения правил: ЗАПРЕЩЕНЫ до завершения набора выборки (§64)
+ACCEPT (P3)     : N ≥ 74 (для Exp ≈ +0.22R) AND Exp net &gt; 0 AND p &lt; 0.10
+                  AND rolling ≥ 60% окон с Exp &gt; 0 AND MaxDD ≤ 15R
+NEEDS_MORE_DATA : 44 ≤ N &lt; 74 при Exp &gt; 0
+REJECT          : Exp net ≤ 0 OR p ≥ 0.10 при N ≥ 74 OR rolling FAIL
+Калибровка      : только после REJECT/ACCEPT, новой версией freeze (§63–65)
+</code></pre>
+<p>Ослабленный порог p &lt; 0.10 для forward-выборки объявляется <b>заранее</b>, а не по факту.</p>
+<h2>5. Что осталось открытым</h2>
+<ol>
+<li><b>Спот XAUUSD M15</b> — блокер P3 (прокси непригоден для structural-валидации: шум базиса ≈ 2 ATR).</li>
+<li>CPI и прочие high-impact события не покрыты фильтром (нет исторического календаря без внешнего API).</li>
+<li>Wave degree / вложенность волн (v1–v2: один уровень).</li>
+<li>Альтернативные counts (§37) — политика не формализована.</li>
+<li>Swaps/rollover в cost model.</li>
+<li>Правки канона, которые нужны для непротиворечивости: §10 (добавить G14a cost/R), §25/§82 (геометрия),</li>
+</ol>
+<p>§26 (трактовка <code>tight</code>), §58 (статусы SHORT и W3 CLASS A), §60 (формула SAMPLE SUFFICIENT).</p>
+<hr>
+<h1>ADDENDUM v2.1 — LIVE PAPER MODE и ОБУЧЕНИЕ (pre-registered ДО первого live-сигнала)</h1>
+<p>Дата: 2026-09-16 • Реализация: <code>web/paper.js</code> (браузер), <code>learn.py</code> (серверный отчёт), тесты <code>web/_papertest.js</code> (21/21 PASS).</p>
+<h2>Правила live paper-трейдинга (заморожены)</h2>
+<table><thead><tr><th>Параметр</th><th>Значение</th></tr></thead><tbody>
+<tr><td>Entry</td><td>open первого M15-бара ПОСЛЕ сигнального (§47); сигнал берётся только при decision = LONG и всех mandatory gates</td></tr>
+<tr><td>SL / TP</td><td>геометрия G_BASE47: SL = 2.5 × ATR(14, M15), TP = 1.0R</td></tr>
+<tr><td>Совпадение TP+SL в одном закрытом баре</td><td><b>SL FIRST</b> (§28)</td></tr>
+<tr><td>Structural invalidation</td><td>выход по close закрытого бара за уровнем (§11)</td></tr>
+<tr><td>Max hold</td><td>96 баров M15 → выход по close, reason TIME</td></tr>
+<tr><td>Ручное закрытие</td><td>разрешено, reason MANUAL, <b>исключается из статистики правил</b></td></tr>
+<tr><td>Costs</td><td>0.52 USD round-trip (0.40 спред + 2 × 0.06)</td></tr>
+<tr><td>Проверка уровней</td><td>только по ЗАКРЫТЫМ барам; формирующийся бар даёт лишь live-стоп по текущей цене (защита между барами)</td></tr>
+<tr><td>Журнал</td><td>append-only в localStorage браузера: закрытые сделки не изменяются (RULE 13); экспорт CSV кнопкой</td></tr>
+<tr><td>Канонический журнал</td><td>серверный <code>data/forward/forward_signals.csv</code> остаётся источником истины для forward OOS</td></tr>
+</tbody></table>
+<h2>Классификация ошибок (§66) — эвристики заморожены</h2>
+<pre><code>
+WIN (net&gt;0, MFE&lt;1.5) • WIN-RUNNER-CANDIDATE (net&gt;0, MFE≥1.5)
+SL/SL_FIRST + MFE≥1.0  → EXECUTION ERROR: TP недосягаем / вход поздний
+SL/SL_FIRST + MFE&lt;0.2  → TRIGGER ERROR: вход против движения
+SL/SL_FIRST иначе      → REGIME ERROR: шум против позиции
+STRUCT → STRUCTURE ERROR • TIME → HOLD ERROR • MANUAL → вне статистики
+</code></pre>
+<h2>Калибровка (§63) и обучение (§65)</h2>
+<ul>
+<li>tier по объёму выборки: &lt;10 NO PARAMETER CHANGES • 10–29 SOFT RESEARCH • 30–49 NORMAL • 50+ FULL;</li>
+</ul>
+<p>любая калибровка — только после нового validation cycle;</p>
+<ul>
+<li>кандидаты порождаются при ≥3 ошибках одного класса (H-TP, H-TRIG, H-HOLD, H-VOL при ≥5, H-RUN при ≥3)</li>
+</ul>
+<p>и фиксируются как <b>pre-registered, НЕ применённые</b>;</p>
+<ul>
+<li>Final OOS для калибровки не используется (§64); отчёт — <code>reports/LEARNING_v1.md</code>;</li>
+<li>обучение в браузере показывает только диагностику: правила на странице не меняются никогда.</li>
+</ul>
+<hr>
+<h1>ADDENDUM v2.2 — ФРАКТАЛЬНЫЕ СТЕПЕНИ ВОЛН (H4 / M15 / M5 / M1) — PRE-REGISTERED</h1>
+<p>Дата: 2026-09-16 • Статус: <b>анализ и отображение; торговые правила НЕ изменены</b> (канон §63–65: любая</p>
+<p>торговая применение степеней требует отдельного walk-forward/OOS).</p>
+<h2>Модель степеней</h2>
+<table><thead><tr><th>Степень</th><th>Таймфрейм</th><th>Роль</th></tr></thead><tbody>
+<tr><td>D2 (primary)</td><td>H4</td><td>основные волны импульса/коррекции</td></tr>
+<tr><td>D1</td><td>M15</td><td>субволны текущей волны H4; execution-степень канона</td></tr>
+<tr><td>D0</td><td>M5</td><td>суб-субволны текущей волны M15</td></tr>
+<tr><td>D-1 (micro)</td><td>M1</td><td>микроволны текущей волны M5</td></tr>
+</tbody></table>
+<h2>Правила разметки (заморожены)</h2>
+<ol>
+<li>Каждая степень размечается <b>независимо</b> причинным ZigZag с порогом K = 2.0 × ATR(14) <b>своего</b> ТФ</li>
+</ol>
+<p>(поэтому на мелких ТФ автоматически получаются мелкие субволны);</p>
+<ol>
+<li>Вложенность выводится причинно по времени: текущая нога степени D(k) является отрезком, внутри</li>
+</ol>
+<p>которого живёт вся разметка степени D(k−1); цепочка читается как</p>
+<p><code>H4:W3 ⊃ M15:W4 ⊃ M5:W2 ⊃ M1:W5</code>;</p>
+<ol>
+<li>текущая нога степени = волна с номером <code>piv.length</code> (5 пивотов → W5 идёт сейчас; 3 пивота ABC → C);</li>
+<li>согласованность (diagnostic): все 4 степени одного направления → «согласованы»;</li>
+</ol>
+<p>иначе «разнонаправлены». Это <b>контекст</b>, не гейт и не сигнал;</p>
+<ol>
+<li>invalidation и trigger каждой степени — свои (по своему ZigZag/Donchian);</li>
+<li>отображение: панель «Волны по таймфреймам» на LIVE + цепочка вложенности.</li>
+</ol>
+<h2>Что запрещено</h2>
+<ul>
+<li>использовать согласованность степеней как mandatory gate или trigger без нового pre-registration</li>
+</ul>
+<p>и walk-forward (§68–69);</p>
+<ul>
+<li>менять execution-степень канона (M15) и геометрию SL/TP;</li>
+<li>размечать степень по будущим барам (каждая степень использует только свои закрытые бары).</li>
+</ul>
+<h2>Кандидат для будущей валидации (зафиксирован сейчас, не применяется)</h2>
+<ul>
+<li>H-MTF-ALIGN: входить только при согласованности H4+M15+M5 по направлению → требует walk-forward 365/90</li>
+</ul>
+<p>на каждой степени и сравнения с текущим базовым правилом.</p>
+<hr>
+<h1>ADDENDUM v2.3 — РИСК-И-UX ПАКЕТ (P0/P1 совета специалистов) — PRE-REGISTERED</h1>
+<p>Дата: 2026-09-16. Изменения НЕ касаются сигнальных правил (только издержки, аварийные лимиты,</p>
+<p>честность статистики и UX), поэтому новой валидации сигнала не требуют.</p>
+<ol>
+<li><b>Динамические издержки:</b> спред берётся живьём из Binance <code>depth?limit=1</code> (PAXGUSDT, CORS <code>*</code>);</li>
+</ol>
+<p>при недоступности — консервативный fallback <b>0.60 USD</b>; комиссия 0.06/сторона.</p>
+<p>G14a (cost/R ≤ 0.05) и все R-метрики журнала считаются по живому спреду.</p>
+<ol>
+<li><b>Circuit breaker:</b> реализованный убыток дня (UTC) ≤ <b>−3R</b> → новые входы отключаются до конца дня,</li>
+</ol>
+<p>баннер на странице; журнал помечает состояние <code>circuit.open</code>.</p>
+<ol>
+<li><b>Always-valid p-value (mSPRT, τ=0.1R, σ=1.24R)</b> показывается в журнале и на LIVE:</li>
+</ol>
+<p>смотреть в журнал можно в любой момент без peeking-bias; классическое p остаётся для отчётов.</p>
+<ol>
+<li><b>Тик 25 c</b> (было 10 c) + полная пауза фетча/рендера в фоновой вкладке</li>
+</ol>
+<p>(<code>document.visibilityState</code>) + leader election между вкладками через BroadcastChannel:</p>
+<p>данные fetch&#x27;ит одна вкладка, остальные получают состояние сообщением.</p>
+<ol>
+<li><b>Sticky mini-bar</b> с решением, уровнем триггера, спредом и временем обновления.</li>
+<li><b>Интро для новичка</b> сверху главной + ссылка «как читать журнал».</li>
+</ol></div></main><footer>spec v1.8 · freeze v2 · engine v2 · собрано 2026-09-16 10:46 UTC<br>build 260916-89364b · не является инвестиционной рекомендацией.</footer><script>
+(function(){
+  var t = localStorage.getItem("xauusd_theme");
+  if (t === "tech") document.documentElement.classList.add("tech");
+  window.toggleTheme = function(){
+    var on = document.documentElement.classList.toggle("tech");
+    localStorage.setItem("xauusd_theme", on ? "tech" : "magic");
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = on ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  };
+  document.addEventListener("DOMContentLoaded", function(){
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = document.documentElement.classList.contains("tech") ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  });
+})();
+</script></body></html>

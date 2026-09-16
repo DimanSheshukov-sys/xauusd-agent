@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LIVE · XAUUSD Elliott Agent · ЕKB</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="magic.css">
+<style>body.trader .research{display:none}</style>
+<style>
+#mtfWrap table{font-size:12.5px}
+#mtfWrap svg{vertical-align:middle}
+#chain{font-size:16px}
+nav .tz{margin-left:auto}
+#themeBtn{margin-left:8px}
+</style>
+</head>
+<body>
+<nav><b>XAUUSD ELLIOTT AGENT</b><span class="live-dot"></span>
+<a class="active" href="index.html">LIVE</a>
+<a href="reports/index.html">Отчёты</a>
+<a href="docs/index.html">Документы</a>
+<a href="data/">Данные</a><span class="tz">🕒 Екатеринбург (UTC+5)</span><button class="btn" id="modeBtn" onclick="toggleMode()" style="margin-left:8px"></button><button id="themeBtn" onclick="toggleTheme()"></button></nav>
+<div class="wrap">
+<div class="lead" style="margin:0 0 14px"><b>Что это за система.</b> Она наблюдает за золотом на четырёх таймфреймах,
+размечает волны движения и честно пишет в журнал каждый свой прогноз: куда ждёт цену, где цель и где стоп.
+Торговает редко и только когда выполнены все обязательные проверки; сейчас решение и причины показаны ниже.
+<a href="reports/TRADE_JOURNAL.html">Как читать журнал сделок →</a></div>
+<div class="banner" id="circuitBanner" style="display:none"></div>
+<div class="banner" id="eventBanner"></div>
+<div id="proxyStrip" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 12px">
+  <div style="background:#241d0c;border:2px solid #8a6a1c;border-radius:4px;padding:10px 14px">
+    <b style="color:#b08a2e;font-variant:small-caps">PROXY / RESEARCH (PAXG)</b>
+    <div style="font-size:12.5px;color:#6b543a">Все исторические метрики — на proxy-данных.
+    Results are based on proxy data and must not be interpreted as validated XAUUSD performance.</div></div>
+  <div style="background:#f8eed4;border:2px dashed #8a1f1f;border-radius:4px;padding:10px 14px">
+    <b style="color:#8a1f1f;font-variant:small-caps">REAL XAUUSD / FORWARD</b>
+    <div style="font-size:12.5px;color:#6b543a" id="realStatus">REAL XAUUSD validation unavailable ·
+    forward trades: 0 · идёт сбор (FORWARD VALIDATION)</div></div></div>
+<div id="trader5" class="card" style="margin:0 0 12px"></div>
+<div id="factors" class="card" style="margin:0 0 12px"></div>
+<div id="stickyBar" style="position:sticky;top:52px;z-index:30;background:rgba(244,232,200,.96);border:1px solid #c8ab74;
+ border-radius:4px;padding:7px 12px;margin:0 0 12px;font-size:13.5px;box-shadow:0 2px 8px rgba(90,60,20,.15)"></div>
+<div class="grid">
+  <div class="card span6"><h2>Рынок · реальное время (Binance PAXGUSDT + спот gold-api.com)</h2>
+    <div class="kpis">
+      <div class="kpi"><span>XAU спот</span><b class="gold" id="spot">—</b><i>gold-api.com</i></div>
+      <div class="kpi"><span>PAXG (прокси)</span><b id="px">—</b><i id="pxChg">—</i></div>
+      <div class="kpi"><span>Базис спот−прокси</span><b id="basis">—</b><i>норма ±20 USD</i></div>
+      <div class="kpi"><span>ATR(14) M15 = R/2.5</span><b id="atr">—</b><i id="costR">cost/R —</i></div>
+      <div class="kpi"><span>RSI(14) H1</span><b id="rsiH1">—</b><i>confirmation B04 &gt; 50</i></div>
+      <div class="kpi"><span>D1 close / EMA200</span><b id="d1">—</b><i id="regime">regime —</i></div>
+      <div class="kpi"><span>До события §43</span><b id="evt">—</b><i id="evtName">FOMC / NFP</i></div>
+      <div class="kpi"><span>Обновлено (ЕKB)</span><b id="tick">—</b><i>каждые 10 c</i></div>
+    </div>
+  </div>
+
+  <div class="card span2"><h2>Решение по §72 (live)</h2>
+    <div class="big" id="dec">…</div><div class="state" id="st">—</div>
+    <div class="note">branch: <span id="branch">—</span></div>
+    <ul class="r" id="reasons"></ul>
+    <div class="note" id="plain" style="margin-top:9px;color:#c7d3e6;border-top:1px dashed #22304d;padding-top:8px"></div>
+  </div>
+
+  <div class="card span2"><h2>Прогноз · TP / SL (§37, геометрия 2.5 ATR / 1.0R)</h2>
+    <div id="forecast"></div>
+    <div class="note" id="priors"></div>
+  </div>
+
+  <div class="card research span2"><h2>Gate-конвейер G00→G15 (live)</h2>
+    <div class="flow" id="gates"></div>
+    <div class="note">Правила заморожены: PARAMETER_FREEZE_v2. Любое FALSE на mandatory-гейте → WAIT/NO TRADE (§16–19).</div>
+  </div>
+
+  <div class="card research span6"><h2>Графики волн · свой график на каждый таймфрейм</h2>
+    <div id="tfTabs" style="margin:4px 0 10px"></div>
+    <div id="tfHead" style="font-size:15px;margin:2px 0 6px"></div>
+    <canvas id="cvBig" style="height:430px" role="img"
+ aria-label="График волн выбранного таймфрейма; числовое описание — в таблице волн ниже"></canvas>
+    <div id="tfWaveTable" style="margin-top:10px"></div>
+    <div class="note">Каждый таймфрейм — отдельный график со своей разметкой волн (причинный ZigZag, K = 2.0 × ATR своего ТФ).
+    Тонкая пунктирная линия — субволны младшей степени, перенесённые по времени внутрь текущей волны.
+    Уровни: синий пунктир — invalidation, золотой — trigger Donchian(8); на M15 также SL/TP/entry сценария.</div>
+  </div>
+
+  <div class="card research span6"><h2>Волны по таймфреймам · фрактальная вложенность (H4 ⊃ M15 ⊃ M5  M1)</h2>
+    <div id="chain" style="font-size:15px;margin:2px 0 8px"></div>
+    <div class="note">Цепочка показывает, внутри какой волны какого таймфрейма мы находимся сейчас.
+    Согласованность степеней — контекст, не сигнал (freeze v2.2). Подробности — во вкладках графиков выше.</div>
+  </div>
+
+  <div class="card span3"><h2>Позиция · live paper-трейдинг</h2>
+    <div id="posBox"></div>
+    <button class="btn danger" id="btnClose">Закрыть вручную (MANUAL)</button>
+    <button class="btn" id="btnCsv">Экспорт журнала CSV</button>
+    <button class="btn danger" id="btnReset">Сброс журнала</button>
+    <div class="note">Журнал append-only (RULE 13): закрытые сделки не изменяются. Entry = open следующего M15-бара
+    после сигнала (§47); TP+SL в одном баре → SL FIRST (§28); costs 0.52 USD.</div>
+    <table><thead><tr><th>Закрыта (ЕKB)</th><th>Причина</th><th>Entry</th><th>Exit</th><th>Net R</th><th>Класс §66</th></tr></thead>
+    <tbody id="jrn"></tbody></table>
+  </div>
+
+  <div class="card research span3"><h2>Обучение и калибровка (§63–66)</h2>
+    <div id="learn"></div>
+    <div class="note">Система НЕ меняет правила автоматически (§64–65): ошибки классифицируются, кандидаты
+    фиксируются как pre-registered и ждут нового validation cycle. Final OOS для калибровки не используется.</div>
+  </div>
+
+  <div class="card span6" style="padding:9px 15px">
+    <div class="note" style="margin:0">Данные: PAXG = PROXY золота, спот — ориентир · SHORT и W3-A отключены (freeze v2) ·
+    прогноз = сценарий §37 с TP/SL/invalidation, не предсказание цены · priors WR 63.1% / Exp +0.22R — research-оценки ·
+    <b>не является инвестиционной рекомендацией</b>.</div>
+  </div>
+</div>
+</div>
+<div id="riskModal" style="display:none;position:fixed;inset:0;background:rgba(20,16,12,.72);z-index:90;
+ display:none;align-items:center;justify-content:center"><div style="max-width:520px;background:#f4e8c8;
+ border:2px solid #7d1f1a;border-radius:6px;padding:22px 26px;color:#3a2a18;font-size:15px">
+ <b style="font-variant:small-caps;font-size:18px;color:#7d1f1a">Предупреждение о риске</b>
+ <p>Это исследовательская система. Все цифры — исторические или симулированные, на прокси-данных;
+ они не являются инвестиционной рекомендацией. Торговля с плечом может привести к потере капитала.</p>
+ <button class="btn" onclick="sessionStorage.setItem('xauusd_risk','1');document.getElementById('riskModal').style.display='none'">Понятно, продолжить</button>
+ </div></div>
+<script>if(!sessionStorage.getItem("xauusd_risk")){var rm=document.getElementById("riskModal");if(rm)rm.style.display="flex";}</script>
+<script src="live_engine.js"></script>
+<script src="paper.js"></script>
+<script>
+(function(){
+var E = window.LiveEngine, P = window.Paper;
+var BIN = "https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=";
+var GOLD = "https://api.gold-api.com/price/XAU";
+var FOMC = ["2026-09-16T18:00Z","2026-10-28T18:00Z","2026-12-09T19:00Z","2027-01-27T19:00Z"];
+var state = { bars:null, d1:null, h1:null, spot:null, R:null };
+var pst = P.load();
+
+var EKB = new Intl.DateTimeFormat("ru-RU",{timeZone:"Asia/Yekaterinburg",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
+var EKBF = new Intl.DateTimeFormat("ru-RU",{timeZone:"Asia/Yekaterinburg",day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
+function ekb(ms){ return EKB.format(new Date(ms)); }
+function ekbf(ms){ return EKBF.format(new Date(ms)); }
+function fmt(x,d){ return x==null||!isFinite(x)?"—":x.toLocaleString("ru-RU",{minimumFractionDigits:d==null?2:d,maximumFractionDigits:d==null?2:d}); }
+function fetchJSON(u){ return fetch(u,{cache:"no-store"}).then(function(r){ if(!r.ok) throw 0; return r.json(); }); }
+function klines(iv,lim){ return fetchJSON(BIN+iv+"&limit="+lim).then(function(a){ return a.map(function(k){ return {t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]}; }); }); }
+
+function nfpList(y){ var out=[]; for(var m=0;m<12;m++){ var d=new Date(Date.UTC(y,m,1)); while(d.getUTCDay()!=5) d.setUTCDate(d.getUTCDate()+1); out.push(Date.UTC(y,m,d.getUTCDate(),12,30)); } return out; }
+var EVENTS = FOMC.map(function(s){return Date.parse(s);}).concat(nfpList(2026), nfpList(2027)).sort(function(a,b){return a-b;});
+function nextEvent(){ var now=Date.now(); for(var i=0;i<EVENTS.length;i++){ if(EVENTS[i]-now> -2*3600e3) return {t:EVENTS[i], inWindow: Math.abs(EVENTS[i]-now)<=2*3600e3}; } return null; }
+function human(ms){ var s=Math.max(0,Math.floor(ms/1000)); var d=Math.floor(s/86400), h=Math.floor(s%86400/3600), m=Math.floor(s%3600/60); return (d?d+"д ":"")+(h?h+"ч ":"")+m+"м"; }
+
+window.toggleMode=function(){
+  var on=document.body.classList.toggle("trader");
+  localStorage.setItem("xauusd_mode", on?"trader":"research");
+  var b=document.getElementById("modeBtn"); if(b) b.textContent= on?"🔬 Research mode":"💼 Trader mode";
+};
+(function(){ if(localStorage.getItem("xauusd_mode")==="trader"){ document.body.classList.add("trader"); } })();
+function trader5(r,last){
+  var sc=r&&r.scenario?r.scenario.primary:null;
+  var q=[["1. Что сейчас?", (r?r.decision:"…")+" · "+(r?r.state:"")],
+   ["2. По какой цене?", sc?("entry "+fmt(sc.entry)+" / сейчас "+fmt(last)):"—"],
+   ["3. Где invalidation?", sc?("SL "+fmt(sc.sl)+" · structural "+fmt(sc.invalidation)):"—"],
+   ["4. Где цели?", sc?("TP1 "+fmt(sc.tp)+" (1.0R) · TP2 "+(sc.w5_target?fmt(sc.w5_target):"—")+" (W5 fib) · TP3 "+fmt(sc.entry+2*(sc.entry-sc.sl))+" (2R, research)"):"—"],
+   ["5. Почему?", (r&&r.reasons&&r.reasons.length)?r.reasons.join("; "):"—"]];
+  return '<h2 style="margin:0 0 8px">Пять вопросов трейдера</h2><table><tbody>'
+   + q.map(function(x){return '<tr><td style="width:190px"><b>'+x[0]+'</b></td><td>'+x[1]+'</td></tr>';}).join("")
+   + '</tbody></table>';
+}
+function factors(r){
+  if(!r) return "";
+  var f=[["Trend", r.d1.bull, "D1 close "+(r.d1.bull?">":"<")+" EMA200: тренд "+(r.d1.bull?"вверх":"вниз")],
+   ["Structure", !!(r.structure&&r.structure.kind==="IMPULSE_W5"), "причинный импульс W1–W4 размечен / нет"],
+   ["Momentum", r.rsi_h1>50, "RSI(H1) "+(isFinite(r.rsi_h1)?r.rsi_h1.toFixed(0):"—")+" (для LONG нужно > 50)"],
+   ["Volatility / cost", r.gates.G14a!==false, "cost/R ≤ 0.05 при живом спреде"],
+   ["Fibonacci", !!(r.structure&&r.structure.fib_ok), "W2/W4 в замороженных фибо-диапазонах"],
+   ["Wyckoff", null, "context only: не участвует в решении (§19 канона)"],
+   ["Event", !r.eventWindow, "вне окна FOMC/NFP ±2h (§43)"],
+   ["Risk/Reward", !!(r.scenario), "TP 1.0R при SL 2.5 ATR → R:R 1:1"]];
+  return '<h2 style="margin:0 0 8px">Факторы решения · Why '+(r.decision||"WAIT")+'</h2><table><tbody>'
+   + f.map(function(x){ return '<tr><td style="width:150px"><b>'+x[0]+'</b></td><td>'
+     + (x[1]===null?'<span class="dim">—</span>':(x[1]?'<span class="pos">PASS</span>':'<span class="neg">FAIL</span>'))
+     + '</td><td class="dim">'+x[2]+'</td></tr>'; }).join("") + '</tbody></table>';
+}
+function plainText(r){
+  if(r.decision==="LONG") return "Простыми словами: все проверки пройдены — система открыла сделку на рост. Цель и стоп указаны в блоке «Прогноз», результат попадёт в журнал сделок.";
+  if(!r.structure) return "Простыми словами: на графике сейчас нет понятной волны движения, поэтому система просто наблюдает и ждёт.";
+  if(r.structure.kind!=="IMPULSE_W5") return "Простыми словами: на графике откат (коррекция), а не направленная волна — по правилам в таких ситуациях система не торгует.";
+  var parts=[];
+  if(!r.d1.bull) parts.push("цена ниже своей средней линии за 200 дней, а покупать по правилам можно только выше неё");
+  if(r.gates.G10===false) parts.push("цена ещё не пробила уровень подтверждения "+fmt(r.donchian.hi)+" — ждём пробоя");
+  if(!parts.length) parts.push("не выполнено одно из обязательных условий");
+  return "Простыми словами: система видит волну роста, но "+parts.join(" и ")+". Сделки нет; как только условие выполнится — прогноз и сделка появятся в журнале.";
+}
+function gatesHTML(g){ var names=["G00","G01","G02","G03","G04","G05","G06","G07","G08","G08a","G10","G11","G12","G13","G14","G14a","G15"];
+  var h=""; for(var i=0;i<names.length;i++){ var v=g[names[i]]; h+='<div class="'+(v===true?"on":v===false?"off":"")+'">'+names[i]+(v===true?" ✓":v===false?" ✕":" ·")+"</div>"; } return h; }
+
+function forecastHTML(r){
+  if(!r.scenario) return '<div class="dim">сценария нет: нет активной структуры (§37)</div>';
+  var warn = r.decision!=="LONG"
+    ? '<div class="note" style="color:#f0b429;border:1px solid #5c4a17;background:#241d0c;border-radius:8px;padding:6px 9px;margin-bottom:8px">'
+      + '⚠ Вход сейчас НЕ разрешён (решение ' + r.decision + ', ' + r.state + '). Уровни ниже — сценарий для наблюдения (§37), не заявка.</div>'
+    : '<div class="note" style="color:#5ee39a;border:1px solid #1d4a33;background:#0d2318;border-radius:8px;padding:6px 9px;margin-bottom:8px">'
+      + '✓ Все mandatory gates TRUE — сигнал активен, paper-позиция открыта/будет открыта.</div>';
+  return warn + forecastRows(r);
+}
+function forecastRows(r){
+  var p=r.scenario.primary, c=r.close, d=r.scenario.direction;
+  var rows='<div class="lvl"><span>Направление</span><b class="'+(d>0?"pos":"neg")+'">'+(d>0?"LONG · W5 вверх":"SHORT · W5 вниз")+"</b></div>"
+   +'<div class="lvl"><span>Триггер (Donchian 8)</span><b class="gold">'+fmt(p.trigger)+' <span class="dim">('+(p.trigger>c?"+":"")+fmt(p.trigger-c)+" USD)</span></b></div>"
+   +'<div class="lvl"><span>Entry (next M15 open)</span><b>'+fmt(p.entry)+"</b></div>"
+   +'<div class="lvl"><span>STOP-LOSS (2.5 ATR)</span><b class="neg">'+fmt(p.sl)+' <span class="dim">(−'+fmt(Math.abs(p.entry-p.sl))+" USD)</span></b></div>"
+   +'<div class="lvl"><span>TAKE-PROFIT (1.0R)</span><b class="pos">'+fmt(p.tp)+' <span class="dim">(+'+fmt(Math.abs(p.tp-p.entry))+" USD)</span></b></div>"
+   +'<div class="lvl"><span>R:R</span><b>1 : 1.0 <span class="dim">(R = '+fmt(p.r_usd)+" USD)</span></b></div>"
+   +'<div class="lvl"><span>Invalidation §11</span><b style="color:#60a5fa">'+fmt(p.invalidation)+' <span class="dim">('+fmt(Math.abs(c-p.invalidation))+" USD)</span></b></div>"
+   +'<div class="lvl"><span>W5 fib-цель (диагностика)</span><b style="color:#a78bfa">'+(p.w5_target?fmt(p.w5_target):"—")+"</b></div>"
+   +'<div class="lvl"><span>cost / R</span><b>'+fmt(p.cost_r,4)+' <span class="dim">(лимит 0.05)</span></b></div>';
+  return rows;
+}
+
+function posHTML(){
+  var last = state.bars ? state.bars[state.bars.length-1].c : null;
+  if(pst.open){ var o=pst.open, pnl=(last-o.entry)/o.r_usd;
+    return '<div class="kpis">'
+      +'<div class="kpi"><span>Статус</span><b class="pos">ОТКРЫТА LONG</b><i>'+o.branch+"</i></div>"
+      +'<div class="kpi"><span>P&L live</span><b class="'+(pnl>=0?"pos":"neg")+'">'+(pnl>=0?"+":"")+pnl.toFixed(2)+"R</b><i>"+fmt((last-o.entry))+' USD</i></div>'
+      +'<div class="kpi"><span>Entry / Exit-уровни</span><b style="font-size:13px">'+fmt(o.entry)+"</b><i>SL "+fmt(o.sl)+" · TP "+fmt(o.tp)+"</i></div>"
+      +'<div class="kpi"><span>Удержание</span><b>'+o.hold+" / "+P.MAX_HOLD+'</b><i>MAE '+o.mae.toFixed(2)+"R · MFE "+o.mfe.toFixed(2)+"R</i></div>"
+      +'<div class="kpi"><span>Открыта (ЕKB)</span><b style="font-size:13px">'+ekb(o.entry_time)+"</b><i>сигнал "+ekb(o.signal_time)+"</i></div></div>"; }
+  if(pst.pending) return '<div class="note gold">SIGNAL получен в '+ekb(pst.pending.signal_time)+' — вход по open следующего M15-бара (§47)…</div>';
+  return '<div class="dim">Позиции нет. Сигнал появится, когда все mandatory gates станут TRUE (§15).</div>';
+}
+
+function learnHTML(){
+  var s=P.stats(pst), c=P.candidates(pst);
+  var h='<div class="kpis">'
+   +'<div class="kpi"><span>Сделок (paper)</span><b>'+s.n+"</b><i>без MANUAL</i></div>"
+   +'<div class="kpi"><span>Win rate</span><b>'+(s.n?s.wr.toFixed(1)+"%":"—")+"</b><i></i></div>"
+   +'<div class="kpi"><span>PF / Exp</span><b>'+(s.n?(isFinite(s.pf)?s.pf.toFixed(2):"∞")+" / "+(s.exp>=0?"+":"")+s.exp.toFixed(3)+"R":"—")+'</b><i>net</i></div>'
+   +'<div class="kpi"><span>Net / MaxDD</span><b>'+(s.n?(s.net>=0?"+":"")+s.net.toFixed(1)+"R / "+s.mdd.toFixed(1)+"R":"—")+'</b><i></i></div>'
+   +'<div class="kpi"><span>В деньгах (0.5% риска)</span><b>'+(s.n?((s.net*50)>=0?"+":"")+(s.net*50).toFixed(0)+" USD":"—")+'</b><i>капитал 10 000 USD · стресс 10 стопов = −5%</i></div>'
+   +'<div class="kpi"><span>Надёжность (always-valid p)</span><b>'+(s.n?P.alwaysValidP(pst.closed.filter(function(t){return t.reason!=="MANUAL";}).map(function(t){return t.net_r;})).toFixed(3):"—")+'</b><i>freeze v2.3</i></div></div>'
+   +'<div class="note" style="margin-top:10px">Калибровочный tier (§63): <b class="gold">'+c.tier.tier+"</b> → "+c.tier.allowed+"</div>"
+   +'<div class="note">Классы ошибок §66: '+Object.keys(c.counts).map(function(k){return k+" ×"+c.counts[k];}).join(", ")||"—"+"</div>";
+  if(c.candidates.length){ h+='<table style="margin-top:8px"><thead><tr><th>Кандидат (pre-registered)</th><th>Статус</th></tr></thead><tbody>'
+    +c.candidates.map(function(x){return "<tr><td>"+x.id+": "+x.text+"</td><td class=dim>"+x.status+"</td></tr>";}).join("")+"</tbody></table>"; }
+  else h+='<div class="note">Кандидатов на калибровку нет: порог ≥3 ошибок одного класса не достигнут.</div>';
+  return h;
+}
+
+function jrnHTML(){
+  var rows=pst.closed.slice(-8).reverse();
+  if(!rows.length) return '<tr><td colspan="6" class="dim">закрытых сделок пока нет</td></tr>';
+  return rows.map(function(t){ return "<tr><td>"+ekbf(t.exit_time)+"</td><td>"+t.reason+"</td><td>"+fmt(t.entry)+"</td><td>"+fmt(t.exit)+"</td><td class="
+    +(t.net_r>=0?"pos":"neg")+'">'+(t.net_r>=0?"+":"")+t.net_r.toFixed(2)+"R</td><td class=dim>"+t.error+"</td></tr>"; }).join("");
+}
+
+function pal(){
+  var tech = document.documentElement.classList.contains("tech");
+  return tech ? {grid:"#22304d",txt:"#8b98b0",up:"#22c55e",dn:"#ef4444",wave:"#f0b429",inv:"#60a5fa",w5:"#a78bfa",ink:"#e6edf7"}
+              : {grid:"#c9b285",txt:"#6b543a",up:"#1e5631",dn:"#8a1f1f",wave:"#8a6a1c",inv:"#274b6d",w5:"#5b4632",ink:"#3a2a18"};
+}
+function draw(){ /* полные графики рисует renderTFCharts() из renderMTF() */ }
+
+function render(){
+  var r=state.R; if(!r) return;
+  var last=state.bars[state.bars.length-1], prev=state.bars[state.bars.length-2];
+  document.getElementById("px").textContent=fmt(last.c);
+  var ch=(last.c/prev.c-1)*100, el=document.getElementById("pxChg");
+  el.textContent=(ch>=0?"+":"")+ch.toFixed(2)+"% за бар"; el.className=ch>=0?"pos":"neg";
+  if(state.spot){ var b=state.spot-last.c, be=document.getElementById("basis");
+    be.textContent=(b>=0?"+":"")+fmt(b); be.className=Math.abs(b)>40?"neg":"pos"; }
+  document.getElementById("atr").textContent=fmt(r.atr);
+  document.getElementById("costR").textContent="cost/R "+fmt(r.scenario?r.scenario.primary.cost_r:NaN,4);
+  document.getElementById("rsiH1").textContent=isFinite(r.rsi_h1)?r.rsi_h1.toFixed(1):"—";
+  document.getElementById("d1").textContent=fmt(r.d1.close,0)+" / "+fmt(r.d1.ema200,0);
+  var rg=document.getElementById("regime"); rg.textContent="regime: "+(r.d1.bull?"BULL":"BEAR (LONG запрещён §7)"); rg.className=r.d1.bull?"pos":"neg";
+  var ev=nextEvent(), eb=document.getElementById("eventBanner");
+  if(ev){ document.getElementById("evt").textContent=human(ev.t-Date.now());
+    document.getElementById("evtName").textContent=ekbf(ev.t)+" ЕKB";
+    if(ev.inWindow){ eb.style.display="block"; eb.textContent="§43 EVENT RISK: окно FOMC/NFP ±2h — новые входы запрещены (G08a)."; } else eb.style.display="none"; }
+  var dEl=document.getElementById("dec"); dEl.textContent=r.decision;
+  dEl.className="big "+(r.decision==="LONG"?"pos":(r.decision==="SHORT"?"neg":"gold"));
+  document.getElementById("st").textContent=r.state;
+  document.getElementById("branch").textContent=r.branch||"—";
+  document.getElementById("reasons").innerHTML=r.reasons.map(function(t){return "<li>"+t+"</li>";}).join("");
+  document.getElementById("plain").textContent=plainText(r);
+  var t5=document.getElementById("trader5"); if(t5) t5.innerHTML=trader5(state.R, state.R?state.R.close:null);
+  var fc=document.getElementById("factors"); if(fc) fc.innerHTML=factors(state.R);
+  var mb=document.getElementById("modeBtn"); if(mb&&!mb.textContent) mb.textContent=document.body.classList.contains("trader")?"🔬 Research mode":"💼 Trader mode";
+  document.getElementById("gates").innerHTML=gatesHTML(r.gates);
+  document.getElementById("forecast").innerHTML=forecastHTML(r);
+  document.getElementById("priors").textContent="Priors: "+r.priors.note+" (WR "+r.priors.wr+"%, Exp +"+r.priors.exp+"R, PF "+r.priors.pf+")";
+  document.getElementById("tick").textContent=ekb(Date.now());
+  var sb=document.getElementById("stickyBar");
+  if(sb){ var wv=state.R?waveNow(state.R):{label:"—",dir:0};
+    sb.innerHTML='<b class="'+(state.R&&state.R.decision==="LONG"?"pos":state.R&&state.R.decision==="SHORT"?"neg":"gold")+'">'
+      +(state.R?state.R.decision:"…")+'</b> · '+(state.R?state.R.state:"")
+      +(state.R&&state.R.scenario?' · trigger '+fmt(state.R.scenario.primary.trigger):'')
+      +' · спред '+(state.spread?state.spread.toFixed(2):"—")+' USD'
+      +' · обновлено '+ekb(Date.now()); }
+  var cb2=document.getElementById("circuitBanner");
+  if(cb2){ if(pst.circuit&&pst.circuit.open){ cb2.style.display="block";
+      cb2.textContent="⛔ Аварийный лимит дня достигнут ("+pst.circuit.loss.toFixed(2)+"R за "+pst.circuit.day+"): новые сделки сегодня отключены (freeze v2.3)."; }
+    else cb2.style.display="none"; }
+  document.getElementById("posBox").innerHTML=posHTML();
+  document.getElementById("learn").innerHTML=learnHTML();
+  document.getElementById("jrn").innerHTML=jrnHTML();
+  syncButtons();
+  var age=Date.now()-(state.lastOk||0);
+  var tk=document.getElementById("tick");
+  if(age>30000){ tk.textContent=ekb(state.lastOk||Date.now())+" ⚠ устарело"; tk.className="neg"; } else tk.className="";
+  draw();
+}
+
+var TFS = [["4h","H4",500],["15m","M15",600],["5m","M5",600],["1m","M1",600]];
+var mtf = {};
+function waveNow(st){
+  if(!st || !st.structure) return {label:"—", dir:0, kind:null};
+  var legs = st.structure.kind==="IMPULSE_W5" ? ["W1","W2","W3","W4","W5"] : ["A","B","C"];
+  var i = Math.min(st.structure.piv.length-1, legs.length-1);
+  return {label: legs[i], dir: st.structure.direction, kind: st.structure.kind};
+}
+
+var tfSel = "15m";
+function childPivMapped(parentSt, childSt){
+  if(!childSt || !childSt.structure || !parentSt || !parentSt.bars) return [];
+  var pb = parentSt.bars;
+  return childSt.structure.piv.map(function(p){
+    var cb = childSt.bars[p.idx]; if(!cb) return null;
+    var lo=0, hi=pb.length-1, best=-1;
+    while(lo<=hi){ var mid=(lo+hi)>>1; if(pb[mid].t<=cb.t){ best=mid; lo=mid+1; } else hi=mid-1; }
+    return best>=0 ? {idx:best, price:p.price, kind:p.kind} : null;
+  }).filter(function(x){return x;});
+}
+function renderTFChart(cv, st, childSt, main, N){
+  if(!cv||!st||!st.bars) return;
+  var P=pal();
+  N = N || Math.min(600, st.bars.length);
+  var bars=st.bars.slice(-N), off=st.bars.length-N;
+  var dpr=window.devicePixelRatio||1, W=cv.clientWidth||900, H=cv.clientHeight||430;
+  cv.width=W*dpr; cv.height=H*dpr;
+  var x=cv.getContext("2d"); x.setTransform(dpr,0,0,dpr,0,0);
+  var lo=Infinity, hi=-Infinity, i;
+  for(i=0;i<bars.length;i++){ if(bars[i].l<lo)lo=bars[i].l; if(bars[i].h>hi)hi=bars[i].h; }
+  var sub = childPivMapped(st, childSt);
+  if(st.structure) st.structure.piv.forEach(function(p){ if(p.idx>=off){ lo=Math.min(lo,p.price); hi=Math.max(hi,p.price);} });
+  sub.forEach(function(p){ if(p.idx>=0){ lo=Math.min(lo,p.price); hi=Math.max(hi,p.price);} });
+  var lv=[];
+  if(st.structure) lv.push(st.structure.invalidation);
+  if(st.donchian) lv.push(st.donchian.hi);
+  if(main&&state.R&&state.R.scenario){ var sc=state.R.scenario.primary; lv.push(sc.sl,sc.tp,sc.entry); if(sc.w5_target)lv.push(sc.w5_target); }
+  lv.forEach(function(v){ if(isFinite(v)){ lo=Math.min(lo,v); hi=Math.max(hi,v);} });
+  var pad=(hi-lo)*0.05||1; lo-=pad; hi+=pad;
+  var L=8,R=66,T=10,B=24;
+  var px=function(k){ return L+k*(W-L-R)/Math.max(1,bars.length-1); };
+  var py=function(v){ return H-B-(H-B-T)*(v-lo)/(hi-lo); };
+  x.clearRect(0,0,W,H);
+  x.font="10.5px Georgia,serif";
+  x.strokeStyle=P.grid; x.fillStyle=P.txt;
+  for(i=0;i<=5;i++){ var v=lo+(hi-lo)*i/5; x.beginPath(); x.moveTo(L,py(v)); x.lineTo(W-R,py(v)); x.stroke(); x.fillText(fmt(v,0),W-R+6,py(v)+3); }
+  var bw=(W-L-R)/bars.length;
+  for(i=0;i<bars.length;i++){ var b=bars[i], col=b.c>=b.o?P.up:P.dn;
+    x.strokeStyle=col; x.beginPath(); x.moveTo(px(i),py(b.h)); x.lineTo(px(i),py(b.l)); x.stroke();
+    x.fillStyle=col; var yo=py(b.o),yc=py(b.c); x.fillRect(px(i)-bw*0.32,Math.min(yo,yc),Math.max(1,bw*0.64),Math.max(1,Math.abs(yc-yo))); }
+  for(i=0;i<bars.length;i+=Math.ceil(bars.length/8)){ x.fillStyle=P.txt; x.fillText(ekb(bars[i].t),px(i)-24,H-7); }
+  // субволны младшей степени (по времени)
+  if(sub.length){
+    x.strokeStyle=P.w5; x.lineWidth=1; x.setLineDash([3,3]); x.beginPath();
+    sub.forEach(function(p,q){ var X=px(p.idx),Y=py(p.price); if(q) x.lineTo(X,Y); else x.moveTo(X,Y); });
+    x.stroke(); x.setLineDash([]);
+    sub.forEach(function(p){ x.fillStyle=P.w5; x.beginPath(); x.arc(px(p.idx),py(p.price),2.2,0,7); x.fill(); });
+  }
+  // волны своей степени
+  if(st.structure){
+    x.strokeStyle=P.wave; x.lineWidth=2.2; x.beginPath();
+    st.structure.piv.forEach(function(p,q){ if(p.idx<off) return; var X=px(p.idx-off),Y=py(p.price);
+      if(q) x.lineTo(X,Y); else x.moveTo(X,Y); });
+    x.stroke(); x.lineWidth=1;
+    var legs=st.structure.kind==="IMPULSE_W5"?["W1","W2","W3","W4","W5"]:["A","B","C"];
+    x.fillStyle=P.wave; x.font="12px Georgia,serif";
+    st.structure.piv.forEach(function(p,q){ if(p.idx<off) return;
+      x.beginPath(); x.arc(px(p.idx-off),py(p.price),3.4,0,7); x.fill();
+      if(q<st.structure.piv.length-1){ var p2=st.structure.piv[q+1];
+        x.fillText(legs[q],(px(p.idx-off)+px(p2.idx-off))/2-8,(py(p.price)+py(p2.price))/2-7); } });
+  }
+  function line(v,col,dash,label){ if(!isFinite(v))return; x.save(); x.setLineDash(dash); x.strokeStyle=col;
+    x.beginPath(); x.moveTo(L,py(v)); x.lineTo(W-R,py(v)); x.stroke(); x.setLineDash([]);
+    x.fillStyle=col; x.fillText(label+" "+fmt(v),L+4,py(v)-4); x.restore(); }
+  if(st.structure) line(st.structure.invalidation,P.inv,[5,4],"invalidation");
+  if(st.donchian) line(st.donchian.hi,P.wave,[2,3],"trigger");
+  if(main&&state.R&&state.R.scenario){ var sc2=state.R.scenario.primary;
+    line(sc2.sl,P.dn,[4,3],"SL"); line(sc2.tp,P.up,[4,3],"TP"); line(sc2.entry,P.ink,[1,2],"entry"); }
+}
+function waveTable(st){
+  if(!st||!st.structure) return '<div class="note">Активной волны на этом таймфрейме пока нет — система наблюдает.</div>';
+  var stt=st.structure;
+  if(stt.kind!=="IMPULSE_W5")
+    return '<table><thead><tr><th>Волна</th><th>Размер, USD</th></tr></thead><tbody>'
+      + '<tr><td>A</td><td>'+fmt(stt.w1)+'</td></tr><tr><td>B</td><td>'+fmt(stt.w2)+'</td></tr>'
+      + '<tr><td>C (идёт сейчас)</td><td>'+fmt(stt.w3)+'</td></tr></tbody></table>';
+  var rows=[["W1",stt.w1,"—"],["W2",stt.w2,"ретрейс "+(stt.ret2*100).toFixed(0)+"% W1"],
+            ["W3",stt.w3,"W3/W1 = "+stt.ratio.toFixed(2)+" → class "+stt.w3_class],
+            ["W4",stt.w4,"ретрейс "+(stt.ret4*100).toFixed(0)+"% W3"],
+            ["W5 (идёт сейчас)",null,"цель fib "+(stt.w5_target?fmt(stt.w5_target):"—")]];
+  return '<table><thead><tr><th>Волна</th><th>Размер, USD</th><th>Примечание</th></tr></thead><tbody>'
+    + rows.map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+(r[1]?fmt(r[1]):"—")+'</td><td class="dim">'+r[2]+'</td></tr>'; }).join("")
+    + '</tbody></table>';
+}
+function renderTFPage(){
+  var tabs=document.getElementById("tfTabs");
+  if(tabs && !tabs.children.length){
+    tabs.innerHTML = TFS.map(function(tf){
+      return '<button class="btn" data-tf="'+tf[0]+'" onclick="selectTF(\''+tf[0]+'\')">'+tf[1]+'</button>';
+    }).join("");
+  }
+  document.querySelectorAll("#tfTabs .btn").forEach(function(b){
+    b.style.opacity = b.dataset.tf===tfSel ? 1 : .55;
+    b.style.boxShadow = b.dataset.tf===tfSel ? "0 0 0 2px rgba(176,138,46,.55)" : "";
+  });
+  var tf = TFS.filter(function(t){return t[0]===tfSel;})[0];
+  var st = mtf[tfSel]; if(!st) return;
+  var childOf={"4h":"15m","15m":"5m","5m":"1m","1m":null};
+  var w=waveNow(st);
+  var hd=document.getElementById("tfHead");
+  if(hd) hd.innerHTML='<b>'+tf[1]+'</b> · <span class="'+(w.dir>0?"pos":w.dir<0?"neg":"dim")+'">'
+    +(w.dir>0?"рост ↑":w.dir<0?"снижение ↓":"флэт")+'</span> · текущая волна <b>'
+    +(st.structure?(st.structure.kind==="IMPULSE_W5"?w.label+" из 5":w.label+" из 3"):"—")+'</b>'
+    +(st.structure?' · W3 class '+st.structure.w3_class+' · invalidation '+fmt(st.structure.invalidation):'')
+    +(childOf[tfSel]?' · субволны: '+childOf[tfSel]:' · субволн нет (младшей степени не существует)');
+  renderTFChart(document.getElementById("cvBig"), st, childOf[tfSel]?mtf[childOf[tfSel]]:null, tfSel==="15m", 600);
+  var wt=document.getElementById("tfWaveTable");
+  if(wt) wt.innerHTML = '<h3 style="margin:6px 0 4px">Таблица волн '+tf[1]+'</h3>' + waveTable(st);
+}
+window.selectTF = function(tf){ tfSel = tf; renderTFPage(); };
+function renderMTF(){
+  var chain=[];
+  TFS.forEach(function(tf){
+    var st=mtf[tf[0]]; if(!st) return;
+    var w=waveNow(st);
+    var arrow=w.dir>0?"↑":(w.dir<0?"↓":"·");
+    chain.push('<span class="'+(w.dir>0?"pos":w.dir<0?"neg":"dim")+'"><b>'+tf[1]+":"+w.label+arrow+"</b></span>");
+  });
+  var cEl=document.getElementById("chain");
+  if(cEl){
+    cEl.innerHTML = chain.join(" <span class=dim>⊃</span> ");
+    var dirs=TFS.map(function(tf){ var w=waveNow(mtf[tf[0]]); return w.dir; }).filter(function(d){return d!==0;});
+    if(dirs.length){ var same=dirs.every(function(d){return d===dirs[0];});
+      cEl.innerHTML += ' <span class="'+(same?"pos":"gold")+'">'+(same?"· степени согласованы":"· степени разнонаправлены (контекст, не сигнал)")+'</span>'; }
+  }
+  renderTFPage();
+}
+
+function fetchSpread(){
+  return fetch("https://api.binance.com/api/v3/depth?limit=1&symbol=PAXGUSDT",{cache:"no-store"})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(d){ var sp=(+d.asks[0][0])-(+d.bids[0][0]); return isFinite(sp)&&sp>0 ? sp : 0.60; })
+    .catch(function(){ return 0.60; });
+}
+var bc = ("BroadcastChannel" in window) ? new BroadcastChannel("xauusd_live") : null;
+var LEAD_KEY="xau_lead_ts", isLeader=false;
+function leadTick(){
+  var now=Date.now(), ts=+localStorage.getItem(LEAD_KEY)||0;
+  if(!isLeader && now-ts>12000){ isLeader=true; }
+  if(isLeader){ localStorage.setItem(LEAD_KEY, String(now)); }
+  return isLeader;
+}
+setInterval(leadTick,5000); isLeader=leadTick();
+if(bc) bc.onmessage=function(ev){
+  if(isLeader || !ev.data || ev.data.type!=="state") return;
+  var d=ev.data;
+  mtf=d.mtf; state.R=d.R; state.spot=d.spot; state.spread=d.spread; state.bars=d.mtf["15m"]?d.mtf["15m"].bars:null;
+  state.d1=d.d1; state.h1=d.h1; pst=d.pst||pst;
+  render();
+};
+function refresh(){
+  if(document.hidden) return;                 // пауза в фоновой вкладке
+  if(bc && !leadTick()) return;               // данные fetch'ит только вкладка-лидер
+  Promise.all([klines("15m",600),klines("1h",500),klines("1d",300),fetchJSON(GOLD).catch(function(){return null;})]
+    .concat(TFS.map(function(tf){ return klines(tf[0],tf[2]).catch(function(){return null;}); })))
+  .then(function(res){
+    TFS.forEach(function(tf,i){ var d=res[4+i]; if(d){ var st=E.decide(d, d, d); st.bars=d; mtf[tf[0]]=st; } });
+    renderMTF();
+    state.bars=res[0]; state.h1=res[1]; state.d1=res[2];
+    if(res[3]&&res[3].price){ state.spot=res[3].price; document.getElementById("spot").textContent=fmt(res[3].price); }
+    return fetchSpread().then(function(sp){ state.spread=sp;
+      var r=E.decide(state.bars,state.d1,state.h1,{spread:sp,comm:0.06}); state.R=r; state.lastOk=Date.now();
+    P.onTick(pst,state.bars,r,Date.now(), (state.spread||0.60)+0.12); pst=P.load();
+    render();
+    if(bc&&isLeader) bc.postMessage({type:"state",mtf:mtf,R:state.R,spot:state.spot,spread:state.spread,d1:state.d1,h1:state.h1,pst:pst});
+    });
+    fetchJSON("data/status.json").catch(function(){});
+  }).catch(function(e){ document.getElementById("tick").textContent="ошибка: "+(e&&e.message||e); });
+}
+function syncButtons(){
+  document.getElementById("btnClose").disabled = !pst.open;
+  document.getElementById("btnCsv").disabled = !pst.closed.length;
+  document.getElementById("btnReset").disabled = !pst.closed.length && !pst.open;
+  document.getElementById("btnClose").style.opacity = pst.open ? 1 : .4;
+  document.getElementById("btnCsv").style.opacity = pst.closed.length ? 1 : .4;
+  document.getElementById("btnReset").style.opacity = (pst.closed.length || pst.open) ? 1 : .4;
+}
+document.getElementById("btnClose").onclick=function(){ if(pst.open){ P.closeManual(pst,state.bars[state.bars.length-1].c,Date.now()); pst=P.load(); render(); } };
+document.getElementById("btnCsv").onclick=function(){
+  var blob=new Blob([P.exportCSV(pst)],{type:"text/csv"}); var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="paper_journal_"+new Date().toISOString().slice(0,10)+".csv"; a.click(); };
+document.getElementById("btnReset").onclick=function(){ if(confirm("Сбросить paper-журнал? Закрытые сделки удалятся.")){ pst=P.reset(pst); render(); } };
+refresh(); setInterval(refresh,25000); document.addEventListener("visibilitychange",function(){ if(!document.hidden) refresh(); });
+window.addEventListener("resize",draw);
+})();
+</script>
+</body>
+</html>

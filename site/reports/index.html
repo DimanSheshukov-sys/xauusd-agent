@@ -1,0 +1,16 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Отчёты · XAUUSD Elliott Agent</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E"><link rel="stylesheet" href="../magic.css"></head><body><nav class="top"><b>XAUUSD ELLIOTT AGENT</b><a href="../index.html">LIVE</a><a href="../reports/TRADE_JOURNAL.html">Журнал сделок</a><a href="../reports/index.html" class="active">Отчёты</a><a href="../docs/index.html">Документы</a><a href="../data/">Данные</a></nav><main><div class="doc"><h1>Отчёты</h1><ul><li><a href="TRADE_JOURNAL.html">TRADE_JOURNAL</a> — Журнал сделок: win rate, % успешных прогнозов, срезы</li><li><a href="DATA_QUALITY_v1.html">DATA_QUALITY_v1</a> — Аудит источников: PROXY vs REAL, гэпы, дубли, спреды</li><li><a href="VALIDATION_v1.html">VALIDATION_v1</a> — Bootstrap, Monte Carlo, stability, regime, walk-forward, attribution</li><li><a href="EXPERT_COUNCIL_v1.html">EXPERT_COUNCIL_v1</a> — Совет специалистов: аудит системы и дорожная карта</li><li><a href="BRANCH_REGISTRY_v1.html">BRANCH_REGISTRY_v1</a> — Реестр жизненного цикла веток (active/retired/candidate)</li><li><a href="RISK_SENSITIVITY_v1.html">RISK_SENSITIVITY_v1</a> — Чувствительность к slippage и гэпам золота</li><li><a href="EXPERIMENT_v3.html">EXPERIMENT_v3</a> — Кандидат v2: метрики, абляции, валидация прокси</li><li><a href="WALKFORWARD_v2.html">WALKFORWARD_v2</a> — Walk-forward OOS с отбором внутри train-окна</li><li><a href="EXPERIMENT_v2.html">EXPERIMENT_v2</a> — Матрица конфигураций × издержки, реестр веток</li><li><a href="LEARNING_v1.html">LEARNING_v1</a> — Классификация ошибок §66 и калибровка §63</li></ul></div></main><footer>spec v1.8 · freeze v2 · engine v2 · собрано 2026-09-16 10:46 UTC<br>build 260916-89364b · не является инвестиционной рекомендацией.</footer><script>
+(function(){
+  var t = localStorage.getItem("xauusd_theme");
+  if (t === "tech") document.documentElement.classList.add("tech");
+  window.toggleTheme = function(){
+    var on = document.documentElement.classList.toggle("tech");
+    localStorage.setItem("xauusd_theme", on ? "tech" : "magic");
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = on ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  };
+  document.addEventListener("DOMContentLoaded", function(){
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = document.documentElement.classList.contains("tech") ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  });
+})();
+</script></body></html>

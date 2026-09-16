@@ -1,0 +1,74 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EXPERIMENT_v3 · XAUUSD Elliott Agent</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E"><link rel="stylesheet" href="../magic.css"></head><body><nav class="top"><b>XAUUSD ELLIOTT AGENT</b><a href="../index.html">LIVE</a><a href="../reports/TRADE_JOURNAL.html">Журнал сделок</a><a href="../reports/index.html">Отчёты</a><a href="../docs/index.html">Документы</a><a href="../data/">Данные</a></nav><main><div class="doc"><h1>EXPERIMENT v3 — кандидат v2, абляции и валидация прокси</h1>
+<p>Сформировано: <b>2026-09-15 20:26 UTC</b> • Кандидат v2: <code>LONG_ONLY (B01–B04)</code> + <code>G_BASE47 (2.5 ATR / 1.0R / 96)</code> + event filter §43 + costs REAL</p>
+<blockquote>Всё, что ниже на периоде 2022-01-24 → 2026-09-15, — <b>RESEARCH SAMPLE</b> (уже использован). Подтверждение кандидата возможно только на forward OOS (§64).</blockquote>
+<p>Event-фильтр: событий 93 (FOMC 37, NFP 56), заблокировано 1,581 M15-баров (1.36% датасета).</p>
+<h2>1. Кандидат v2 на research sample</h2>
+<p><code>N=141  WR=63.1%  PF(net)=1.573  PF(gross)=1.712  Exp=+0.2204R  Net=+31.07R  MaxDD=-9.93R  costs=5.93R  t=2.70 p=0.007  N_95%=74</code></p>
+<table><thead><tr><th>Конфигурация</th><th>N</th><th>WR %</th><th>PF net</th><th>Exp net R</th><th>Net R</th><th>MaxDD R</th><th>p</th></tr></thead><tbody>
+<tr><td><b>v2 кандидат (event filter ON)</b></td><td>141</td><td>63.1</td><td>1.573</td><td>+0.2204</td><td>+31.1</td><td>-9.9</td><td>0.007</td></tr>
+</tbody></table>
+<h2>2. Абляции (каждый фактор отдельно, остальное заморожено)</h2>
+<table><thead><tr><th>Конфигурация</th><th>N</th><th>WR %</th><th>PF net</th><th>Exp net R</th><th>Net R</th><th>MaxDD R</th><th>p</th></tr></thead><tbody>
+<tr><td>§43 event filter <b>OFF</b></td><td>143</td><td>62.2</td><td>1.514</td><td>+0.2023</td><td>+28.9</td><td>-9.9</td><td>0.013</td></tr>
+<tr><td>только B02 (EMA200+FibOFF)</td><td>141</td><td>63.1</td><td>1.573</td><td>+0.2204</td><td>+31.1</td><td>-9.9</td><td>0.007</td></tr>
+<tr><td>только B04 (ExtW3+RSI)</td><td>89</td><td>66.3</td><td>1.814</td><td>+0.2859</td><td>+25.4</td><td>-6.4</td><td>0.005</td></tr>
+<tr><td>только B01 (Fib ON)</td><td>63</td><td>61.9</td><td>1.503</td><td>+0.1999</td><td>+12.6</td><td>-6.8</td><td>0.107</td></tr>
+<tr><td><b>только SHORT (B05–B07)</b></td><td>20</td><td>45.0</td><td>0.706</td><td>-0.1738</td><td>-3.5</td><td>-5.9</td><td>0.448</td></tr>
+<tr><td>sensitivity: swing k=1.5</td><td>120</td><td>58.3</td><td>1.283</td><td>+0.1236</td><td>+14.8</td><td>-9.1</td><td>0.173</td></tr>
+<tr><td>sensitivity: swing k=3.0</td><td>141</td><td>55.3</td><td>1.135</td><td>+0.0630</td><td>+8.9</td><td>-10.8</td><td>0.453</td></tr>
+<tr><td>costs ZERO</td><td>141</td><td>63.1</td><td>1.712</td><td>+0.2624</td><td>+37.0</td><td>-9.0</td><td>0.001</td></tr>
+<tr><td>costs LIGHT 0.24</td><td>141</td><td>63.1</td><td>1.646</td><td>+0.2430</td><td>+34.3</td><td>-9.4</td><td>0.003</td></tr>
+<tr><td>costs HEAVY 0.80</td><td>141</td><td>63.1</td><td>1.504</td><td>+0.1978</td><td>+27.9</td><td>-10.4</td><td>0.015</td></tr>
+</tbody></table>
+<h2>3. Wyckoff-флаг (§18/§51) — CONTEXT ONLY, gate не является</h2>
+<table><thead><tr><th>Подмножество</th><th>N</th><th>WR %</th><th>PF net</th><th>Exp net R</th><th>Net R</th></tr></thead><tbody>
+<tr><td>Wyckoff = True</td><td>42</td><td>64.3</td><td>1.594</td><td>+0.2250</td><td>+9.5</td></tr>
+<tr><td>Wyckoff = False</td><td>99</td><td>62.6</td><td>1.467</td><td>+0.1862</td><td>+18.4</td></tr>
+</tbody></table>
+<p>Флаг определён для 141 сделок кандидата: True у 42. Согласно §19 флаг <b>не</b> может быть mandatory gate; приводится как диагностический срез (проверка гипотезы §51 на независимой реализации).</p>
+<h2>4. Валидация PROXY: PAXGUSDT против реального золота GC=F</h2>
+<ul>
+<li><b>M15 перекрытие:</b> 3,681 баров (2026-07-20 → 2026-09-15)</li>
+<li><b>Корреляция 15-минутных доходностей: 0.9614</b></li>
+<li>Базис (PAXG − GC=F): медиана -56.07 USD (уровень), <b>шум базиса</b> (|базис − медиана|): средний 16.20 USD = 1.98 × ATR(M15), max 56.39 USD</li>
+<li>Медианный ATR(14) M15: GC=F 8.18 USD</li>
+<li><b>H1 перекрытие:</b> 11,100 баров (2024-09-25 → 2026-09-15)</li>
+<li><b>Корреляция часовых доходностей: 0.9288</b></li>
+<li>Базис по дням: медиана -11.48 USD, шум (|базис − медиана|) средний 16.80 USD, max |базис| 104.09 USD</li>
+<li>Базис в % от цены: медиана -0.308%</li>
+</ul>
+<h3>Совпадение сигналов на общем окне (M15)</h3>
+<ul>
+<li><b>PAXG (прокси):</b> N=9, структур IMPULSE_W5=30, Exp +0.5270R, PF 3.318, Net +4.7R</li>
+<li><b>GC=F (реальное):</b> N=4, структур IMPULSE_W5=29, Exp -0.0278R, PF 0.946, Net -0.1R</li>
+<li>Совпало входов (±1 час): <b>2 из 9</b> сигналов прокси (на реальном золоте 4 сигналов за то же окно)</li>
+</ul>
+<blockquote><b>Вывод по прокси.</b> Постоянный уровень базиса на R-метрики не влияет (они нормированы на ATR). Влияет <b>шум базиса</b>: если он сопоставим с ATR(M15), то пивоты ZigZag и границы волн на прокси не совпадают со спотом — ровно это и показывает низкое совпадение сигналов. При малом числе сигналов в окне (единицы) статистика совпадений слабая, но направление вывода однозначно: <b>PAXG пригоден как directional/robustness стенд, но НЕ как замена спот XAUUSD для production-валидации M15-структур</b>.</blockquote>
+<h2>5. Итоговый статус (§57)</h2>
+<table><thead><tr><th>Компонент</th><th>Статус v1.8 (канон)</th><th>Предлагаемый статус</th><th>Основание</th></tr></thead><tbody>
+<tr><td>LONG_ONLY + G_BASE47 (кандидат v2)</td><td>—</td><td><b>P2 (walk-forward validated)</b></td><td>research: N=141, Exp +0.220R, p=0.007; WF-OOS: см. WALKFORWARD_v2.md (LONG_ONLY</td><td>G_BASE47 Exp +0.205R, p=0.020)</td></tr>
+<tr><td>§25/§82 geometry (1 ATR / 1.5R)</td><td>production candidate</td><td><b>P1 → понизить</b></td><td>убыточна после costs на M15</td></tr>
+<tr><td>SHORT B05–B07</td><td>P1</td><td><b>P0 (disable)</b></td><td>N=20, Exp -0.174R</td></tr>
+<tr><td>B04 ExtW3+RSI</td><td>P0</td><td><b>P1</b></td><td>N=89, Exp +0.286R</td></tr>
+<tr><td>Wyckoff flag</td><td>P1 contextual</td><td><b>P1 contextual</b> (реализован)</td><td>gap D15 закрыт формальным определением</td></tr>
+<tr><td>Event filter §43</td><td>не реализован</td><td><b>реализован, ablation выше</b></td><td>FOMC+NFP ±2h</td></tr>
+<tr><td>Full State Machine</td><td>P0 until end-to-end</td><td><b>P2 на PROXY</b></td><td>end-to-end пройден; P3 только после спот-данных и forward OOS</td></tr>
+</tbody></table>
+<p><b>Для P3 → P4 требуется:</b> forward OOS на данных после 2026-09-15 20:00 UTC (N ≥ 44 для Exp ≈ +0.30R по формуле freeze G) <b>и</b> подтверждение на спот XAUUSD M15.</p>
+<hr>
+<p>Время: 7 c • Не является инвестиционной рекомендацией.</p></div></main><footer>spec v1.8 · freeze v2 · engine v2 · собрано 2026-09-16 10:46 UTC<br>build 260916-89364b · не является инвестиционной рекомендацией.</footer><script>
+(function(){
+  var t = localStorage.getItem("xauusd_theme");
+  if (t === "tech") document.documentElement.classList.add("tech");
+  window.toggleTheme = function(){
+    var on = document.documentElement.classList.toggle("tech");
+    localStorage.setItem("xauusd_theme", on ? "tech" : "magic");
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = on ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  };
+  document.addEventListener("DOMContentLoaded", function(){
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = document.documentElement.classList.contains("tech") ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  });
+})();
+</script></body></html>

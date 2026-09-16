@@ -1,0 +1,33 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RISK_SENSITIVITY_v1 · XAUUSD Elliott Agent</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E"><link rel="stylesheet" href="../magic.css"></head><body><nav class="top"><b>XAUUSD ELLIOTT AGENT</b><a href="../index.html">LIVE</a><a href="../reports/TRADE_JOURNAL.html">Журнал сделок</a><a href="../reports/index.html">Отчёты</a><a href="../docs/index.html">Документы</a><a href="../data/">Данные</a></nav><main><div class="doc"><h1>ЧУВСТВИТЕЛЬНОСТЬ РИСКА v1 — slippage и гэпы</h1>
+<p>freeze SHA-256: <code>560dbb724b744c11</code> · база: кандидат v2, N=163, PROXY-данные.</p>
+<h2>1. Slippage на стоп-выходах</h2>
+<p>Допущение: slippage добавляется только к выходам по SL/SL_FIRST (гэпы и очереди в стоп).</p>
+<table><thead><tr><th>Slippage, USD</th><th>Expectancy, R</th><th>Net R</th><th>PF</th><th>WR</th></tr></thead><tbody>
+<tr><td>0.0</td><td>+0.1562</td><td>+25.5</td><td>1.373</td><td>60.1%</td></tr>
+<tr><td>0.1</td><td>+0.1524</td><td>+24.8</td><td>1.361</td><td>60.1%</td></tr>
+<tr><td>0.2</td><td>+0.1487</td><td>+24.2</td><td>1.349</td><td>60.1%</td></tr>
+<tr><td>0.3</td><td>+0.1449</td><td>+23.6</td><td>1.337</td><td>60.1%</td></tr>
+</tbody></table>
+<p>Вывод: slippage 0.3 USD на стопах снижает expectancy с +0.1562R до +0.1449R (Net +25.5R → +23.6R); база устойчива, но запас по edge небольшой — см. always-valid p в журнале сделок.</p>
+<h2>2. Гэпы открытия D1 (GC=F, реальное золото)</h2>
+<ul>
+<li>дней: 6534 · средний |гэп| 4.63 USD · медиана 2.40 USD · максимум 124.90 USD</li>
+<li>в единицах ATR(14): медиана 0.295 · доля дней с |гэпом| &gt; 0.5 ATR: 32.9% · &gt; 1 ATR: 13.3%</li>
+<li>худший гэп: -124.90 USD</li>
+</ul>
+<p>Вывод: дневные гэпы золота в медиане малы относительно ATR, но хвосты существуют: стоп-выход после выходных может исполниться хуже уровня на величину до нескольких ATR. Рекомендация R5 учтена в стресс-сценарии журнала (10 стопов подряд).</p></div></main><footer>spec v1.8 · freeze v2 · engine v2 · собрано 2026-09-16 10:46 UTC<br>build 260916-89364b · не является инвестиционной рекомендацией.</footer><script>
+(function(){
+  var t = localStorage.getItem("xauusd_theme");
+  if (t === "tech") document.documentElement.classList.add("tech");
+  window.toggleTheme = function(){
+    var on = document.documentElement.classList.toggle("tech");
+    localStorage.setItem("xauusd_theme", on ? "tech" : "magic");
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = on ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  };
+  document.addEventListener("DOMContentLoaded", function(){
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = document.documentElement.classList.contains("tech") ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  });
+})();
+</script></body></html>

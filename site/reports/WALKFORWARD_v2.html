@@ -1,0 +1,88 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WALKFORWARD_v2 · XAUUSD Elliott Agent</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E"><link rel="stylesheet" href="../magic.css"></head><body><nav class="top"><b>XAUUSD ELLIOTT AGENT</b><a href="../index.html">LIVE</a><a href="../reports/TRADE_JOURNAL.html">Журнал сделок</a><a href="../reports/index.html">Отчёты</a><a href="../docs/index.html">Документы</a><a href="../data/">Данные</a></nav><main><div class="doc"><h1>WALK-FORWARD v2 — end-to-end OOS с отбором внутри train-окна</h1>
+<p>Сформировано: <b>2026-09-15 20:22 UTC</b> • §45/§46 • данные: <code>paxg_m15</code> (PROXY) • costs REAL 0.52 USD RT • event filter §43 ON • k=2.0</p>
+<p>Fold-схема: <b>train 365d → test 90d</b>, сдвиг 90d, всего <b>14 folds</b>. Кандидатов: 10 (5 наборов веток × 2 геометрии). Eligibility: N_train ≥ 25 и Exp_net(train) &gt; 0. Selection: max Exp_net(train).</p>
+<h2>1. Агрегированный OOS (только test-окна, конфигурация выбиралась вслепую)</h2>
+<p><code>N=57  WR=64.9%  PF(net)=1.813  PF(gross)=2.125  Exp=+0.3160R  Net=+18.01R  MaxDD=-4.45R  costs=4.49R  t=2.24 p=0.025  N_95%=44</code></p>
+<table><thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>
+<tr><td>Trades (OOS)</td><td>57</td></tr>
+<tr><td>Win Rate</td><td>64.9%</td></tr>
+<tr><td>PF net / gross</td><td>1.813 / 2.125</td></tr>
+<tr><td>Expectancy net</td><td>+0.3160R</td></tr>
+<tr><td>Net R</td><td>+18.01R</td></tr>
+<tr><td>MaxDD / Recovery</td><td>-4.45R / 4.05</td></tr>
+<tr><td>Max losing streak</td><td>4</td></tr>
+<tr><td>LONG / SHORT</td><td>N=57 PF=1.813 Exp=+0.3160R / N=0 PF=nan Exp=+nanR</td></tr>
+<tr><td>t / p</td><td>2.24 / 0.025 → ЗНАЧИМО</td></tr>
+<tr><td>Требуется N (95%)</td><td>44</td></tr>
+<tr><td>Издержки съели</td><td>4.49R</td></tr>
+</tbody></table>
+<h2>2. Сравнение со статическими бейслайнами на тех же test-окнах</h2>
+<table><thead><tr><th>Конфигурация</th><th>N</th><th>WR %</th><th>PF net</th><th>Exp net R</th><th>Net R</th><th>MaxDD R</th><th>p</th></tr></thead><tbody>
+<tr><td><b>WF-отбор (адаптивно)</b></td><td>57</td><td>64.9</td><td>1.813</td><td>+0.3160</td><td>+18.0</td><td>-4.4</td><td>0.025</td></tr>
+<tr><td>ALL_7</td><td>G_BASE47 (статично)</td><td>124</td><td>61.3</td><td>1.457</td><td>+0.1845</td><td>+22.9</td><td>-9.9</td><td>0.036</td></tr>
+<tr><td>ALL_7</td><td>G_PROD (статично)</td><td>188</td><td>44.7</td><td>1.015</td><td>+0.0094</td><td>+1.8</td><td>-27.8</td><td>0.918</td></tr>
+<tr><td>LONG_ONLY</td><td>G_BASE47 (статично)</td><td>122</td><td>62.3</td><td>1.521</td><td>+0.2050</td><td>+25.0</td><td>-9.9</td><td>0.020</td></tr>
+<tr><td>B04_ONLY</td><td>G_BASE47 (статично)</td><td>77</td><td>67.5</td><td>1.921</td><td>+0.3116</td><td>+24.0</td><td>-6.4</td><td>0.004</td></tr>
+</tbody></table>
+<p><b>Вывод по §48-логике (сравниваем ОБА показателя):</b></p>
+<ul>
+<li>по суммарному Net R адаптивный отбор уступил статике: <code>ALL_7|G_BASE47</code> +22.9R, <code>LONG_ONLY|G_BASE47</code> +25.0R, <code>B04_ONLY|G_BASE47</code> +24.0R</li>
+<li>по Exp на сделку адаптивный отбор превзошёл все бейслайны</li>
+</ul>
+<p>⚠️ <b>Критическая оговорка:</b> из 14 фолдов сделки были только в 4 — остальные 10 закрыты как S27 NEEDS_MORE_DATA (в train-окне не нашлось конфигурации с N ≥ 25 и Exp &gt; 0). OOS-выборка приходится на период высокой активности (2025-07 → 2026-10) и <b>не репрезентативна для всего периода</b>. Статические бейслайны торгуют все окна — отсюда их преимущество по суммарному R.</p>
+<h2>3. По фолдам</h2>
+<table><thead><tr><th>Train</th><th>Test</th><th>Выбрано</th><th>Train Exp</th><th>Train N</th><th>Eligible</th><th>Test N</th><th>Test WR %</th><th>Test Exp</th><th>Test Net R</th></tr></thead><tbody>
+<tr><td>2023-01-24 → 2023-04-24</td><td>2023-04-24 → 2023-07-23</td><td><code>NONE (S27)</code></td><td>—</td><td>0</td><td>1</td><td>0</td><td>—</td><td>—</td><td>+0.0</td></tr>
+<tr><td>2023-04-24 → 2023-07-23</td><td>2023-07-23 → 2023-10-21</td><td><code>NONE (S27)</code></td><td>—</td><td>0</td><td>1</td><td>0</td><td>—</td><td>—</td><td>+0.0</td></tr>
+<tr><td>2023-07-23 → 2023-10-21</td><td>2023-10-21 → 2024-01-19</td><td><code>NONE (S27)</code></td><td>—</td><td>0</td><td>1</td><td>0</td><td>—</td><td>—</td><td>+0.0</td></tr>
+<tr><td>2023-10-21 → 2024-01-19</td><td>2024-01-19 → 2024-04-18</td><td><code>NONE (S27)</code></td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>+0.0</td></tr>
+<tr><td>2024-01-19 → 2024-04-18</td><td>2024-04-18 → 2024-07-17</td><td><code>NONE (S27)</code></td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>+0.0</td></tr>
+<tr><td>2024-04-18 → 2024-07-17</td><td>2024-07-17 → 2024-10-15</td><td><code>NONE (S27)</code></td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>+0.0</td></tr>
+<tr><td>2024-07-17 → 2024-10-15</td><td>2024-10-15 → 2025-01-13</td><td><code>NONE (S27)</code></td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>+0.0</td></tr>
+<tr><td>2024-10-15 → 2025-01-13</td><td>2025-01-13 → 2025-04-13</td><td><code>NONE (S27)</code></td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>+0.0</td></tr>
+<tr><td>2025-01-13 → 2025-04-13</td><td>2025-04-13 → 2025-07-12</td><td><code>NONE (S27)</code></td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>+0.0</td></tr>
+<tr><td>2025-04-13 → 2025-07-12</td><td>2025-07-12 → 2025-10-10</td><td><code>NONE (S27)</code></td><td>—</td><td>0</td><td>4</td><td>0</td><td>—</td><td>—</td><td>+0.0</td></tr>
+<tr><td>2025-07-12 → 2025-10-10</td><td>2025-10-10 → 2026-01-08</td><td>`ALL_7</td><td>G_PROD`</td><td>0.1342</td><td>54</td><td>9</td><td>23</td><td>47.8</td><td>0.0406</td><td>+0.9</td></tr>
+<tr><td>2025-10-10 → 2026-01-08</td><td>2026-01-08 → 2026-04-08</td><td>`B04_ONLY</td><td>G_BASE47`</td><td>0.2031</td><td>32</td><td>10</td><td>13</td><td>92.3</td><td>0.812</td><td>+10.6</td></tr>
+<tr><td>2026-01-08 → 2026-04-08</td><td>2026-04-08 → 2026-07-07</td><td>`B04_ONLY</td><td>G_BASE47`</td><td>0.4804</td><td>42</td><td>10</td><td>11</td><td>72.7</td><td>0.4338</td><td>+4.8</td></tr>
+<tr><td>2026-04-08 → 2026-07-07</td><td>2026-07-07 → 2026-10-05</td><td>`B04_ONLY</td><td>G_BASE47`</td><td>0.481</td><td>50</td><td>10</td><td>10</td><td>60.0</td><td>0.1752</td><td>+1.8</td></tr>
+</tbody></table>
+<p>Фолдов с сделками: 4/14; с Test Exp &gt; 0: <b>4/4</b></p>
+<h2>4. Rolling stability OOS (§62)</h2>
+<table><thead><tr><th>Окно</th><th>Окон</th><th>% Exp&gt;0</th><th>min Exp</th><th>median Exp</th><th>median PF</th></tr></thead><tbody>
+<tr><td>20 сделок</td><td>38</td><td>100.0%</td><td>0.089</td><td>0.404</td><td>2.238</td></tr>
+<tr><td>30 сделок</td><td>28</td><td>100.0%</td><td>0.191</td><td>0.45</td><td>2.603</td></tr>
+<tr><td>50 сделок</td><td>8</td><td>100.0%</td><td>0.304</td><td>0.364</td><td>2.011</td></tr>
+</tbody></table>
+<p>Порог pass: ≥60% окон Exp&gt;0 и median PF&gt;1.0 → <b>PASS</b></p>
+<h2>5. Year-by-year OOS</h2>
+<table><thead><tr><th>Год</th><th>N</th><th>WR %</th><th>PF</th><th>Net R</th><th>Exp R</th></tr></thead><tbody>
+<tr><td>2025</td><td>36</td><td>63.9</td><td>1.767</td><td>+11.5</td><td>+0.3192</td></tr>
+<tr><td>2026</td><td>21</td><td>66.7</td><td>1.91</td><td>+6.5</td><td>+0.3107</td></tr>
+</tbody></table>
+<h2>6. Вердикт</h2>
+<table><thead><tr><th>Критерий §60</th><th>Статус</th></tr></thead><tbody>
+<tr><td>FINAL OOS EXPECTANCY &gt; 0</td><td>✅ +0.3160R</td></tr>
+<tr><td>ROLLING OOS STABLE</td><td>✅ PASS</td></tr>
+<tr><td>SAMPLE SUFFICIENT (N ≥ 44)</td><td>✅ N=57</td></tr>
+<tr><td>p &lt; 0.05</td><td>✅ p=0.025</td></tr>
+<tr><td>DRAWDOWN</td><td>MaxDD -4.45R, recovery 4.05</td></tr>
+<tr><td>CAUSALITY (G01)</td><td>✅ PASS (T1/T2/T3, reports/causality.json)</td></tr>
+</tbody></table>
+<p>Ограничения: PROXY-данные (PAXG), news filter покрывает FOMC+NFP (без CPI), Wyckoff — контекст, не gate; период 2022–2026 уже использовался в research, поэтому promotion в P4 требует forward OOS (§64).</p>
+<p>Время прогона: 3 c</p></div></main><footer>spec v1.8 · freeze v2 · engine v2 · собрано 2026-09-16 10:46 UTC<br>build 260916-89364b · не является инвестиционной рекомендацией.</footer><script>
+(function(){
+  var t = localStorage.getItem("xauusd_theme");
+  if (t === "tech") document.documentElement.classList.add("tech");
+  window.toggleTheme = function(){
+    var on = document.documentElement.classList.toggle("tech");
+    localStorage.setItem("xauusd_theme", on ? "tech" : "magic");
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = on ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  };
+  document.addEventListener("DOMContentLoaded", function(){
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = document.documentElement.classList.contains("tech") ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  });
+})();
+</script></body></html>

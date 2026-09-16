@@ -1,0 +1,25 @@
+# кэш и артефакты среды
+__pycache__/
+*.pyc
+.bin/
+.serve.log
+*.log
+
+# сырые датасеты (перекачиваются заново командой: python3 engine/data.py)
+data/paxg_m15.csv
+data/paxg_m15_raw.csv
+data/paxg_h1.csv
+data/gcf_m15.csv
+data/gcf_h1.csv
+data/gcf_d1.csv
+
+# песочница forward-тестов
+data/forward_sandbox/
+
+# forward-журнал КОММИТИТСЯ (append-only, RULE 13) — data/forward/ не игнорируется
+
+# sandbox-превью (не для публичного репозитория)
+dashboard/preview_sandbox.html
+
+# workflow публикуется отдельно, когда токен получит Actions: R/W
+.github/

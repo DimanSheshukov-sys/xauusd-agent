@@ -1,0 +1,109 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EXPERT_COUNCIL_v1 · XAUUSD Elliott Agent</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E"><link rel="stylesheet" href="../magic.css"></head><body><nav class="top"><b>XAUUSD ELLIOTT AGENT</b><a href="../index.html">LIVE</a><a href="../reports/TRADE_JOURNAL.html">Журнал сделок</a><a href="../reports/index.html">Отчёты</a><a href="../docs/index.html">Документы</a><a href="../data/">Данные</a></nav><main><div class="doc"><h1>СОВЕТ СПЕЦИАЛИСТОВ v1 — аудит сайта и системы XAUUSD Elliott Agent</h1>
+<p>Дата: 2026-09-16 · Формат: независимые заключения семи ролей → консолидированная дорожная карта.</p>
+<p>Основание: живые замеры сайта, чтение кода (<code>engine/</code>, <code>web/</code>, <code>trade_journal.py</code>, <code>learn.py</code>),</p>
+<p>отчёты (<code>EXPERIMENT_v2/v3</code>, <code>WALKFORWARD_v2</code>, <code>LEARNING_v1</code>, <code>TRADE_JOURNAL</code>), freeze v2 + addenda.</p>
+<p><b>Замеренные факты, на которые опирается совет:</b></p>
+<ul>
+<li>первая загрузка live-страницы ≈ <b>76 КБ</b> (html 28.7 + magic.css 10.9 + live_engine 12.3 + paper 10.8);</li>
+<li>live-тик каждые 10 c дёргает <b>8 эндпоинтов</b> (4 ТФ + 3 агрегата + спот) = <b>48 запросов/мин</b> с одной вкладки;</li>
+<li>латентность источников: Binance 136 мс, gold-api <b>683 мс</b> (и только цена, без bid/ask);</li>
+<li>спред XAUUSD, замеренный в разных сессиях: <b>0.40 / 0.46 / 0.50 / 0.62 / 0.83 USD</b> (разброс 2×);</li>
+<li>forward OOS: <b>0 сделок</b> (режим BEAR, WAIT по §7); база: N=163, WR 60.1%, Exp +0.156R (PROXY);</li>
+<li>walk-forward: сделки только в <b>4 из 14</b> фолдов (порог eligibility N≥25);</li>
+<li>шум базиса PAXG↔GC=F ≈ <b>2 × ATR(M15)</b>.</li>
+</ul>
+<hr>
+<h2>1. Quant-методолог (статистика и валидация)</h2>
+<table><thead><tr><th>#</th><th>Находка</th><th>Почему важно</th><th>Рекомендация</th><th>Приоритет</th></tr></thead><tbody>
+<tr><td>Q1</td><td>Live-доказательств пока нет (N=0); всеwin rate&#x27;ы — из PROXY-бэктеста</td><td>любой вывод о «рабочести» преждевременен</td><td>копить forward до N≥74; добавить <b>always-valid p-value</b> (sequential testing), чтобы смотреть в журнал без peeking-bias</td><td>P0</td></tr>
+<tr><td>Q2</td><td>WF-оценка держится на 4 фолдах бычьего режима 2025–2026</td><td>оценка не репрезентативна для боковика/медвежья</td><td>режимно-стратифицированный WF или явная пометка мощности каждого фолда</td><td>P1</td></tr>
+<tr><td>Q3</td><td>Множественные сравнения (геометрии × ветки × степени)</td><td>лучшие цифры — частично selection artifact</td><td>зафиксировать <b>primary endpoint</b> (expectancy net на forward) и семейство тестов; H-MTF-ALIGN уже pre-registered — это правильно</td><td>P1</td></tr>
+<tr><td>Q4</td><td>Мёртвые ветки (SHORT, W3-A) продолжают жить в документах как «активные»</td><td>путает читателя и будущие прогоны</td><td>ввести <b>реестр жизненного цикла веток</b>: research → candidate → active → retired, с датами и причиной</td><td>P2</td></tr>
+<tr><td>Q5</td><td>Нет доверительных интервалов в журнале</td><td>«60 из 100» без интервала читается как точность</td><td>показывать 95% CI для WR и expectancy в human-версии журнала</td><td>P2</td></tr>
+</tbody></table>
+<h2>2. Риск-менеджер</h2>
+<table><thead><tr><th>#</th><th>Находка</th><th>Почему важно</th><th>Рекомендация</th><th>Приоритет</th></tr></thead><tbody>
+<tr><td>R1</td><td>В paper-режиме нет аварийных ограничителей</td><td>серия стопов может съесть депозит даже в симуляции, формируя ложную уверенность</td><td><b>circuit breaker</b>: дневной лимит −3R → автопауза до следующего дня + баннер; максимум 1 позиция (уже так)</td><td>P0</td></tr>
+<tr><td>R2</td><td>Издержки в модели — константа 0.40 USD при наблюдаемом разбросе до 0.83</td><td>при 0.83 cost/R ≈ 0.06 &gt; лимита G14a 0.05 → гейт должен был бы блокировать, но не знает об этом</td><td><b>динамический спред</b> (Binance depth/TV WSS) + консервативный fallback 0.60; G14a считать по живому спреду</td><td>P0</td></tr>
+<tr><td>R3</td><td>R не привязан к капиталу: журнал только в R</td><td>невозможно оценить реальную кривую капитала и риск разорения</td><td>задать риск на сделку (например 0.5% капитала), показать equity в % и в деньгах, стресс-тест серии из 10 стопов</td><td>P1</td></tr>
+<tr><td>R4</td><td>Нет модели.slippage для стоп-выходов (гэпы)</td><td>реальный стоп исполнится хуже уровня</td><td>чувствительность: slippage 0.1/0.2/0.3 USD на стоп-выходах в бэктесте</td><td>P1</td></tr>
+<tr><td>R5</td><td>Гэпы золота на выходных/сессиях CME</td><td>SL может улететь далеко за уровень</td><td>отчёт «gap sensitivity»: распределение гэпов open-vs-prev-close на D1</td><td>P2</td></tr>
+</tbody></table>
+<h2>3. Инженер данных</h2>
+<table><thead><tr><th>#</th><th>Находка</th><th>Почему важно</th><th>Рекомендация</th><th>Приоритет</th></tr></thead><tbody>
+<tr><td>D1</td><td>PROXY-базис шумит на 2 × ATR(M15)</td><td>все «живые» цифры — про PAXG, не про спот XAUUSD</td><td>добыть спот-фид (брокерский API / платный Dukascopy) или модель поправки базиса; до тех пор маркировать все live-числа как PROXY (частично уже есть)</td><td>P0</td></tr>
+<tr><td>D2</td><td>gold-api: 683 мс, одна точка, без bid/ask; единственный источник спота</td><td>единая точка отказа и тормоз тика</td><td>цепочка fallback: gold-api → Binance PAXG last → кэш с меткой возраста</td><td>P1</td></tr>
+<tr><td>D3</td><td>48 запросов/мин с вкладки; N вкладок = N×</td><td>rate-limit 429 и батарея телефона</td><td>тик 20–30 c + <b>leader election</b> между вкладками (BroadcastChannel): данные fetch&#x27;ит одна вкладка, остальные читают; backoff при 429</td><td>P1</td></tr>
+<tr><td>D4</td><td>Paper-журнал живёт в localStorage</td><td>очистка браузера = потеря журнала</td><td>кнопка «резервная копия» + автоматический экспорт раз в сессию; hash-цепочка записей для контроля append-only</td><td>P2</td></tr>
+</tbody></table>
+<h2>4. Frontend / UX</h2>
+<table><thead><tr><th>#</th><th>Находка</th><th>Почему важно</th><th>Рекомендация</th><th>Приоритет</th></tr></thead><tbody>
+<tr><td>U1</td><td>4 полных canvas перерисовываются каждые 10 c, даже в фоновой вкладке</td><td>батарея/_CPU mobile</td><td><code>document.visibilityState</code> + <code>prefers-reduced-motion</code>: в фоне не рисовать и не fetch&#x27;ить</td><td>P1</td></tr>
+<tr><td>U2</td><td>Решение §72 — главный элемент, но на мобильном оно ниже первого экрана</td><td>пользователь видит свечи раньше вердикта</td><td><b>sticky mini-bar</b> сверху: решение + уровень триггера + время обновления</td><td>P1</td></tr>
+<tr><td>U3</td><td>Графики недоступны с клавиатуры/скринридера</td><td>a11y</td><td>aria-label на canvas + переключатель «показать таблицей»</td><td>P2</td></tr>
+<tr><td>U4</td><td>Мелкий золотой текст на пергаменте местами низкоконтрастен</td><td>читаемость</td><td>для мелкого текста золотой → #6d5414</td><td>P2</td></tr>
+<tr><td>U5</td><td>Нет строки «что изменилось с прошлого визита» в журнале</td><td>возвращающемуся пользователю не за что зацепиться</td><td>diff-строка: «+2 сделки, win rate 60 → 61»</td><td>P2</td></tr>
+</tbody></table>
+<h2>5. SRE / надёжность</h2>
+<table><thead><tr><th>#</th><th>Находка</th><th>Почему важно</th><th>Рекомендация</th><th>Приоритет</th></tr></thead><tbody>
+<tr><td>S1</td><td>Workflow <code>site.yml</code> сам коммитит <code>site/</code> обратно, а деплой пушит force</td><td>гонка пушей и перезапись ручной публикации</td><td>убрать self-commit из workflow (или убрать force-push); оставить workflow только публикацию артефакта</td><td>P1</td></tr>
+<tr><td>S2</td><td>Нет алертов о сигнале</td><td>сигнал может случиться, когда вкладка закрыта</td><td>browser Notification + опциональный webhook (Telegram) с ключом пользователя</td><td>P1</td></tr>
+<tr><td>S3</td><td>Деплой без автоматического smoke-теста после пуша</td><td>битая публикация может жить незамеченной</td><td>в <code>deploy_pages_branch.py</code>: после пуша прогонять чек-лист 200-статусов и маркеров (уже есть вручную) автоматически</td><td>P2</td></tr>
+<tr><td>S4</td><td>Нет видимой версии сборки на страницах</td><td>невозможно понять, какая версия сайта открыта</td><td>build-id (дата+hash) в футере каждой страницы</td><td>P2</td></tr>
+</tbody></table>
+<h2>6. Аудитор причинности</h2>
+<table><thead><tr><th>#</th><th>Находка</th><th>Почему важно</th><th>Рекомендация</th><th>Приоритет</th></tr></thead><tbody>
+<tr><td>C1</td><td>Paper-стоп проверяется по формирующемуся бару, а бэктест — по закрытым</td><td>расхождение fills между paper и backtest</td><td>оставить (консервативно по SL) и <b>явно задокументировать</b> в addendum v2.1 как известное расхождение</td><td>P2</td></tr>
+<tr><td>C2</td><td>Тесты T1/T2/T3 проходят; watermark пивотов корректен</td><td>базовая гарантия целостности</td><td>держать тесты в CI при каждом деплое</td><td>P1</td></tr>
+<tr><td>C3</td><td>Freeze-документы не хешированы в отчётах</td><td>невозможно доказать, что прогон шёл по той версии правил</td><td>SHA-256 freeze-файла в шапке каждого отчёта и в журнале сделок</td><td>P2</td></tr>
+</tbody></table>
+<h2>7. Редактор / продуктовый дизайнер</h2>
+<table><thead><tr><th>#</th><th>Находка</th><th>Почему важно</th><th>Рекомендация</th><th>Приоритет</th></tr></thead><tbody>
+<tr><td>E1</td><td>Новичок попадает сразу в live-дашборд без объяснения «что это»</td><td>первый визит = непонимание</td><td>три предложения-интро сверху главной + ссылка «как это читать»</td><td>P1</td></tr>
+<tr><td>E2</td><td>Каталоги отчётов/документов без порядка чтения</td><td>читатель теряется</td><td>блок «с чего начать»: журнал → freeze → experiment v3 → walk-forward</td><td>P2</td></tr>
+<tr><td>E3</td><td>Дисклеймер есть на каждой странице, но мелкий</td><td>комплаенс</td><td>разовое модальное предупреждение о риске на сессию</td><td>P2</td></tr>
+</tbody></table>
+<hr>
+<h2>Консолидированная дорожная карта (топ-10)</h2>
+<table><thead><tr><th>№</th><th>Действие</th><th>Приоритет</th><th>Трудозатраты</th><th>Владелец</th></tr></thead><tbody>
+<tr><td>1</td><td>Динамические издержки + консервативный fallback 0.60 в G14a (R2)</td><td>P0</td><td>S</td><td>агент</td></tr>
+<tr><td>2</td><td>Circuit breaker −3R/день в paper-режиме (R1)</td><td>P0</td><td>S</td><td>агент</td></tr>
+<tr><td>3</td><td>Sequential (always-valid) p-value в журнале (Q1)</td><td>P0</td><td>M</td><td>агент</td></tr>
+<tr><td>4</td><td>Пауза рендера/фетча в фоне + leader election вкладок (U1, D3)</td><td>P1</td><td>M</td><td>агент</td></tr>
+<tr><td>5</td><td>Sticky mini-bar с решением и триггером (U2) + интро для новичка (E1)</td><td>P1</td><td>S</td><td>агент</td></tr>
+<tr><td>6</td><td>Fallback-цепочка спота и тик 20–30 c (D2, D3)</td><td>P1</td><td>S</td><td>агент</td></tr>
+<tr><td>7</td><td>Риск в % капитала + equity-кривая в деньгах (R3)</td><td>P1</td><td>M</td><td>агент</td></tr>
+<tr><td>8</td><td>Реестр жизненного цикла веток + retirement мёртвых (Q4)</td><td>P2</td><td>S</td><td>агент</td></tr>
+<tr><td>9</td><td>Убрать self-commit из workflow / force-push гонку (S1)</td><td>P1</td><td>S</td><td>агент</td></tr>
+<tr><td>10</td><td>Спот-фид вместо PROXY (D1)</td><td>P0</td><td><b>требует внешнего доступа</b></td><td>пользователь</td></tr>
+</tbody></table>
+<h2>Консенсус совета (единогласно)</h2>
+<ol>
+<li><b>Не повышать статус ни одной ветки</b>, пока forward N &lt; 74; текущие «60 из 100» публиковать только с пометкой PROXY и CI.</li>
+<li><b>До любого live-использования</b> (даже paper) внедрить пункты 1–2: издержки по живому спреду и дневной аварийный лимит.</li>
+<li><b>Не добавлять новые сигнальные правила</b> (включая H-MTF-ALIGN) до завершения их pre-registered валидации.</li>
+<li>Красоту и доступность улучшать только после пунктов P0–P1 безопасности и методологии.</li>
+</ol>
+<h2>Чего совет делать НЕ рекомендует</h2>
+<ul>
+<li>добавлять индикаторы «для подтверждения» (нарушает structure-first и множит сравнения);</li>
+<li>усреднять/смещать стоп вручную («дать сделке подышать»);</li>
+<li>считать win rate по paper-журналу без учёта издержек и CI;</li>
+<li>публиковать результаты без пометок PROXY / in-sample / forward;</li>
+<li>калибровать что-либо по final OOS (§64 канона).</li>
+</ul></div></main><footer>spec v1.8 · freeze v2 · engine v2 · собрано 2026-09-16 10:46 UTC<br>build 260916-89364b · не является инвестиционной рекомендацией.</footer><script>
+(function(){
+  var t = localStorage.getItem("xauusd_theme");
+  if (t === "tech") document.documentElement.classList.add("tech");
+  window.toggleTheme = function(){
+    var on = document.documentElement.classList.toggle("tech");
+    localStorage.setItem("xauusd_theme", on ? "tech" : "magic");
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = on ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  };
+  document.addEventListener("DOMContentLoaded", function(){
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = document.documentElement.classList.contains("tech") ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  });
+})();
+</script></body></html>

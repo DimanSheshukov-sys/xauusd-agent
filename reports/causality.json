@@ -1,0 +1,12 @@
+{
+ "verdict": "PASS",
+ "tests": {
+  "T3": true,
+  "T1": true,
+  "T2": true
+ },
+ "samples": 8,
+ "branch": "B02_LONG_EMA200_FIBOFF",
+ "geometry": "G_PROD",
+ "run_utc": "2026-09-15 20:01 UTC"
+}

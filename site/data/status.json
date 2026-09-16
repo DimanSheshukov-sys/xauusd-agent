@@ -1,0 +1,48 @@
+{
+ "ok": true,
+ "generated_utc": "2026-09-16 10:46:11 UTC",
+ "spec": "MASTER_SPEC v1.8",
+ "freeze": "PARAMETER_FREEZE_v2",
+ "engine": "v2",
+ "status_level": "P2 (PROXY)",
+ "causality": "PASS",
+ "candidate": {
+  "trades": 141,
+  "win_rate_pct": 63.12056737588653,
+  "pf_net": 1.5734293585447399,
+  "expectancy_r": 0.22038472508085144,
+  "net_r": 31.074246236400054,
+  "max_dd_r": -9.926938158840112,
+  "p_value": 0.0069075197349186546
+ },
+ "forward": {
+  "runs": 30,
+  "last_run": "2026-09-16 10:46:09",
+  "bars_stored": 3827,
+  "forward_bars": 80,
+  "signals": 0,
+  "state": "ACCUMULATING",
+  "metrics": {},
+  "integrity_warnings": [],
+  "accept_target_n": 74
+ },
+ "datasets": {
+  "gcf_d1": 605446,
+  "gcf_h1": 1044221,
+  "paxg_m15": 7271661,
+  "gcf_m15": 339602,
+  "paxg_h1": 2270040
+ },
+ "reports": [
+  "BRANCH_REGISTRY_v1.md",
+  "DATA_QUALITY_v1.md",
+  "EXPERIMENT_v2.md",
+  "EXPERIMENT_v3.md",
+  "EXPERT_COUNCIL_v1.md",
+  "LEARNING_v1.md",
+  "RISK_SENSITIVITY_v1.md",
+  "TRADE_JOURNAL.md",
+  "VALIDATION_v1.md",
+  "WALKFORWARD_v2.md"
+ ]
+}

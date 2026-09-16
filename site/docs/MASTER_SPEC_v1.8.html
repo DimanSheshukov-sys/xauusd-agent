@@ -1,0 +1,2190 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Канон MASTER SPEC v1.8 · XAUUSD Elliott Agent</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E"><link rel="stylesheet" href="../magic.css"></head><body><nav class="top"><b>XAUUSD ELLIOTT AGENT</b><a href="../index.html">LIVE</a><a href="../reports/TRADE_JOURNAL.html">Журнал сделок</a><a href="../reports/index.html">Отчёты</a><a href="../docs/index.html">Документы</a><a href="../data/">Данные</a></nav><main><div class="doc"><h1>XAUUSD ELLIOTT TRADING AGENT</h1>
+<h2>MASTER SPECIFICATION v1.8</h2>
+<h3>Назначение документа</h3>
+<p>Этот документ является <b>канонической спецификацией торгового ИИ-агента</b> для анализа и принятия решений по XAUUSD.</p>
+<p>Агент должен рассматривать этот документ как единый набор правил для:</p>
+<ul>
+<li>анализа рынка;</li>
+<li>Elliott Wave;</li>
+<li>multi-timeframe анализа;</li>
+<li>классификации структуры;</li>
+<li>определения LONG / SHORT / WAIT;</li>
+<li>построения сценариев;</li>
+<li>trigger;</li>
+<li>invalidation;</li>
+<li>execution;</li>
+<li>risk management;</li>
+<li>backtest;</li>
+<li>walk-forward;</li>
+<li>calibration;</li>
+<li>forward testing;</li>
+<li>анализа ошибок;</li>
+<li>контролируемого self-learning.</li>
+</ul>
+<p>Главный принцип:</p>
+<blockquote><b>Не пытаться максимизировать количество сделок. Не пытаться максимизировать исторический PF. Главная задача — сохранять причинность, не допускать look-ahead и искать устойчивое OOS-положительное математическое ожидание.</b></blockquote>
+<hr>
+<h1>1. ТЕКУЩИЙ СТАТУС</h1>
+<p>Версия:</p>
+<p><code>Elliott Trading Agent v1.8</code></p>
+<p>Статус:</p>
+<p><b>RESEARCH VALIDATED / NOT FULLY PRODUCTION VALIDATED</b></p>
+<p>Архитектура считается наиболее обоснованной из исследованных нами вариантов, однако полная State Machine ещё не получила единого end-to-end OOS подтверждения.</p>
+<p>Критическое правило:</p>
+<pre><code>
+COMPONENT OOS
+≠
+END-TO-END SYSTEM VALIDATION
+</code></pre>
+<hr>
+<h1>2. ОСНОВНАЯ ФИЛОСОФИЯ</h1>
+<p>Система является:</p>
+<p><b>structure-first</b></p>
+<p>а не:</p>
+<p><b>indicator-first</b></p>
+<p>Иерархия:</p>
+<pre><code>
+DATA
+↓
+CAUSALITY
+↓
+MTF CONTEXT
+↓
+ELLIOTT STRUCTURE
+↓
+STRUCTURE TYPE
+↓
+W3 CLASSIFICATION
+↓
+BRANCH
+↓
+REGIME
+↓
+MANDATORY CONFIRMATION
+↓
+SCENARIO
+↓
+TRIGGER
+↓
+INVALIDATION
+↓
+EXECUTION
+↓
+TARGET
+↓
+R:R
+↓
+DECISION
+</code></pre>
+<p>Никакой индикатор не может автоматически отменить более высокий структурный уровень.</p>
+<hr>
+<h1>3. РАЗРЕШЁННЫЕ ФИНАЛЬНЫЕ РЕШЕНИЯ</h1>
+<p>Разрешены только:</p>
+<pre><code>
+LONG
+SHORT
+WAIT
+</code></pre>
+<p>Дополнительные состояния процесса:</p>
+<pre><code>
+HOLD
+NO_TRADE
+STOP
+</code></pre>
+<p><code>HOLD</code> — анализ ещё не завершён, обязательное условие отсутствует.</p>
+<p><code>NO_TRADE</code> — текущий analysis cycle завершён без сделки.</p>
+<p><code>STOP</code> — критическая ошибка данных, причинности или модели.</p>
+<hr>
+<h1>4. CORE ENGINE</h1>
+<p>Основной structural engine:</p>
+<p><b>ELLIOTT WAVE</b></p>
+<p>Основной regime filter:</p>
+<p><b>D1 EMA200</b></p>
+<p>Основной execution timeframe:</p>
+<p><b>M15</b></p>
+<p>Refinement:</p>
+<p><b>H1</b></p>
+<p>Дополнительный execution refinement:</p>
+<p><b>M5</b></p>
+<p>Но M5 не должен самостоятельно создавать новый сигнал, если branch этого не разрешает.</p>
+<hr>
+<h1>5. ELLIOTT CORE</h1>
+<p>Основной production-кандидат:</p>
+<pre><code>
+W1
+↓
+W2
+↓
+W3
+↓
+W4
+↓
+W5 forecast
+</code></pre>
+<p>Для W5 должны быть:</p>
+<ul>
+<li>причинно определённые предыдущие волны;</li>
+<li>valid structure;</li>
+<li>known invalidation;</li>
+<li>неиспользование будущих данных;</li>
+<li>timestamp-consistency.</li>
+</ul>
+<p>Агент обязан различать:</p>
+<pre><code>
+IMPULSE / W5
+ABC
+FAILED FIFTH
+</code></pre>
+<p>Эти классы не должны автоматически смешиваться.</p>
+<hr>
+<h1>6. STRUCTURE TYPE</h1>
+<h3>IMPULSE / W5</h3>
+<p>Основной production/research engine.</p>
+<h3>ABC</h3>
+<p>Отдельная branch.</p>
+<p>Не смешивать статистику ABC с W5 без отдельной маркировки.</p>
+<h3>FAILED FIFTH</h3>
+<p>Research only.</p>
+<p>Не использовать:</p>
+<pre><code>
+future failed fifth
+</code></pre>
+<p>в качестве исторического causal entry.</p>
+<p>Для production необходима заранее определённая:</p>
+<p><b>PRE-FAILURE CAUSAL LABEL</b></p>
+<hr>
+<h1>7. D1 EMA200</h1>
+<p>EMA200 является:</p>
+<p><b>PRIMARY REGIME FILTER</b></p>
+<p>EMA200 не является самостоятельным торговым сигналом.</p>
+<p>Основная логика:</p>
+<pre><code>
+Elliott defines structure
+EMA200 defines regime
+</code></pre>
+<p>Если Elliott и EMA200 конфликтуют:</p>
+<blockquote><b>не форсировать сделку.</b></blockquote>
+<p>Для production LONG текущая policy:</p>
+<pre><code>
+D1 EMA200 = REQUIRED
+</code></pre>
+<hr>
+<h1>8. W3 CLASSIFICATION</h1>
+<p>W3 используется как structural classifier.</p>
+<p>Базовая классификация:</p>
+<h3>CLASS A — NON-EXTENDED</h3>
+<pre><code>
+W3 / W1 &lt; 1
+</code></pre>
+<h3>CLASS B — NORMAL</h3>
+<pre><code>
+1 ≤ W3 / W1 &lt; 1.618
+</code></pre>
+<h3>CLASS C — EXTENDED</h3>
+<pre><code>
+W3 / W1 ≥ 1.618
+</code></pre>
+<p>W3 classification:</p>
+<ul>
+<li>не должен использовать будущие данные;</li>
+<li>должен определяться causal;</li>
+<li>может менять branch priority;</li>
+<li>может активировать branch-specific confirmation;</li>
+<li>может менять confidence;</li>
+<li>не должен автоматически означать entry.</li>
+</ul>
+<p>Если W3 невозможно корректно определить:</p>
+<pre><code>
+W3_CLASS = UNAVAILABLE
+</code></pre>
+<p>Это не означает автоматически WAIT.</p>
+<p>Если выбранная branch допускает отсутствие W3 — продолжить согласно branch policy.</p>
+<hr>
+<h1>9. ИСТОРИЧЕСКОЕ ЗНАЧЕНИЕ W3</h1>
+<p>По проведённому исследованию наиболее сильным диагностическим классом был:</p>
+<pre><code>
+W3 NON-EXTENDED
+</code></pre>
+<p>Глобально:</p>
+<ul>
+<li>Non-extended W3: N=57, PF≈2.217, Expectancy≈+0.491R.</li>
+<li>Normal W3: N=99, PF≈1.356.</li>
+<li>Extended W3: N=254, PF≈1.221.</li>
+</ul>
+<p>По LONG:</p>
+<ul>
+<li>Extended: N=140, PF≈1.417.</li>
+<li>Normal: N=70, PF≈1.682.</li>
+<li>Non-extended: N=37, PF≈2.464.</li>
+</ul>
+<p>По SHORT:</p>
+<ul>
+<li>Extended: N=114, PF≈1.015.</li>
+<li>Normal: N=29, PF≈0.789.</li>
+<li>Non-extended: N=20, PF≈1.833.</li>
+</ul>
+<p>Это <b>диагностическая evidence</b>, а не основание жёстко hard-code все ветки навсегда.</p>
+<p>Эти результаты должны использоваться как hypothesis prior и проходить отдельную walk-forward validation.</p>
+<hr>
+<h1>10. ОБЯЗАТЕЛЬНЫЕ GATES</h1>
+<p>Ниже — canonical mandatory gate pipeline.</p>
+<h2>G00 DATA INTEGRITY</h2>
+<p>Обязано быть:</p>
+<ul>
+<li>OHLC корректен;</li>
+<li>timestamps корректны;</li>
+<li>нет пропущенного критического data segment;</li>
+<li>MTF данные синхронизированы;</li>
+<li>source timeframe известен;</li>
+<li>текущий bar state известен.</li>
+</ul>
+<p>При провале:</p>
+<pre><code>
+WAIT_DATA
+</code></pre>
+<p>или:</p>
+<pre><code>
+STOP
+</code></pre>
+<p>если ошибка неисправима.</p>
+<hr>
+<h2>G01 CAUSALITY</h2>
+<p>Обязано быть:</p>
+<pre><code>
+NO LOOK-AHEAD
+</code></pre>
+<p>Нельзя использовать:</p>
+<ul>
+<li>будущий экстремум;</li>
+<li>будущий W5 outcome;</li>
+<li>будущий failed-fifth confirmation;</li>
+<li>будущий pivot;</li>
+<li>будущий закрытый bar, которого ещё не существовало в момент решения.</li>
+</ul>
+<p>Критический causal violation:</p>
+<pre><code>
+STOP
+</code></pre>
+<hr>
+<h2>G02 MTF CONTEXT</h2>
+<p>Обязательны корректные:</p>
+<ul>
+<li>D1 context;</li>
+<li>H4 context;</li>
+<li>M15 context.</li>
+</ul>
+<p>Все higher-timeframe значения должны использовать только причинно доступные бары.</p>
+<hr>
+<h2>G03 ELLIOTT STRUCTURE</h2>
+<p>Должна существовать valid causal Elliott structure.</p>
+<p>Если структура не определена:</p>
+<pre><code>
+WAIT_STRUCTURE
+</code></pre>
+<p>Не разрешается создавать сделку только на основании индикатора.</p>
+<hr>
+<h2>G04 STRUCTURE TYPE</h2>
+<p>Должен быть определён тип:</p>
+<pre><code>
+IMPULSE/W5
+ABC
+FAILED FIFTH
+</code></pre>
+<p>Если тип нельзя определить:</p>
+<pre><code>
+WAIT_STRUCTURE
+</code></pre>
+<hr>
+<h2>G05 W3 CLASSIFICATION</h2>
+<p>Mandatory только для веток, которым W3 classification действительно требуется.</p>
+<p>Для ABC/Failed Fifth gate может быть skipped.</p>
+<hr>
+<h2>G06 BRANCH ELIGIBILITY</h2>
+<p>Должна существовать зарегистрированная branch.</p>
+<p>Нельзя придумывать новую branch в live analysis.</p>
+<p>Если подходящей branch нет:</p>
+<pre><code>
+NO_TRADE
+</code></pre>
+<hr>
+<h2>G07 REGIME</h2>
+<p>Проверяется branch-specific regime policy.</p>
+<p>Допустимая policy:</p>
+<pre><code>
+REQUIRED
+CONTEXT_ONLY
+DISABLED
+</code></pre>
+<p>Для основного LONG production candidate:</p>
+<pre><code>
+D1 EMA200 = REQUIRED
+</code></pre>
+<hr>
+<h2>G08 MANDATORY CONFIRMATION</h2>
+<p>Проверяются только confirmation factors, объявленные mandatory конкретной branch.</p>
+<p>Например:</p>
+<p>SHORT branch может требовать:</p>
+<pre><code>
+RSI = REQUIRED
+</code></pre>
+<p>LONG core этого не требует.</p>
+<hr>
+<h2>G09 SCENARIO</h2>
+<p>Должен существовать:</p>
+<ul>
+<li>Primary scenario;</li>
+<li>либо valid Alternative scenario.</li>
+</ul>
+<p>Сценарий обязан иметь:</p>
+<ul>
+<li>direction;</li>
+<li>structural interpretation;</li>
+<li>expected path;</li>
+<li>invalidation;</li>
+<li>target logic.</li>
+</ul>
+<p>Если нельзя отделить valid scenario от invalid scenario:</p>
+<pre><code>
+WAIT_SCENARIO
+</code></pre>
+<hr>
+<h2>G10 TRIGGER</h2>
+<p>Должен быть causal executable trigger.</p>
+<p>Основной trigger timeframe:</p>
+<pre><code>
+M15
+</code></pre>
+<p>H1 используется для setup context/refinement.</p>
+<p>M5 может использоваться как дополнительный trigger refinement.</p>
+<hr>
+<h2>G11 STRUCTURAL INVALIDATION</h2>
+<p>До entry structural invalidation не должен быть нарушен.</p>
+<p>Structural invalidation и execution stop — разные понятия.</p>
+<hr>
+<h2>G12 EXECUTION</h2>
+<p>Должны быть известны:</p>
+<ul>
+<li>entry;</li>
+<li>stop;</li>
+<li>target;</li>
+<li>position direction;</li>
+<li>execution method;</li>
+<li>risk.</li>
+</ul>
+<p>Если исполнение не может быть корректно построено:</p>
+<pre><code>
+WAIT_RISK
+</code></pre>
+<hr>
+<h2>G13 TARGET</h2>
+<p>Target должен быть причинно определён.</p>
+<p>Target не должен быть выбран задним числом.</p>
+<hr>
+<h2>G14 R:R</h2>
+<p>Trade допускается только если R:R соответствует branch policy.</p>
+<p>Базовая production configuration:</p>
+<pre><code>
+TP = 1.5R
+</code></pre>
+<hr>
+<h2>G15 DECISION</h2>
+<p>Все mandatory gates должны быть TRUE.</p>
+<p>Только после этого:</p>
+<pre><code>
+LONG
+SHORT
+</code></pre>
+<p>Иначе:</p>
+<pre><code>
+WAIT
+</code></pre>
+<hr>
+<h1>11. GLOBAL MANDATORY GATES</h1>
+<p>Всегда:</p>
+<pre><code>
+DATA
+→
+CAUSALITY
+→
+MTF
+→
+ELLIOTT
+→
+STRUCTURE TYPE
+→
+BRANCH
+→
+SCENARIO
+→
+TRIGGER
+→
+INVALIDATION
+→
+EXECUTION
+→
+TARGET
+→
+RR
+→
+DECISION
+</code></pre>
+<p>Conditional:</p>
+<pre><code>
+W3
+REGIME
+CONFIRMATION
+</code></pre>
+<p>Зависит от branch contract.</p>
+<hr>
+<h1>12. ОСНОВНОЙ LONG PRODUCTION CANDIDATE</h1>
+<p>Canonical branch:</p>
+<pre><code>
+Valid Elliott W1-W2-W3-W4
+↓
+Forecast W5
+↓
+D1 EMA200 supportive
+↓
+W3 classification
+↓
+LONG branch
+↓
+M15 trigger
+↓
+Structural invalidation valid
+↓
+1 ATR SL
+↓
+1.5R TP
+↓
+RR valid
+↓
+LONG
+</code></pre>
+<p>Это основная production-кандидатура.</p>
+<hr>
+<h1>13. HIGH-CONVICTION LONG</h1>
+<p>Prioritized branch:</p>
+<pre><code>
+Bullish Elliott
++
+D1 EMA200 supportive
++
+W3/W1 &lt; 1
+</code></pre>
+<p>Но:</p>
+<pre><code>
+HIGH-CONVICTION
+≠
+GUARANTEED HIGH PROBABILITY
+</code></pre>
+<p>Это structural priority, а не обещание win rate.</p>
+<hr>
+<h1>14. LONG FIB OFF</h1>
+<p>Отдельная зарегистрированная branch:</p>
+<pre><code>
+LONG_EMA200_FIB_OFF
+</code></pre>
+<p>Правила:</p>
+<pre><code>
+Elliott valid
+AND
+EMA200 supportive
+AND
+Fib directional filter disabled
+AND
+LONG branch valid
+</code></pre>
+<p>Исторический final OOS:</p>
+<ul>
+<li>N=26;</li>
+<li>WR≈53.8%;</li>
+<li>PF≈1.75;</li>
+<li>Expectancy≈+0.346R;</li>
+<li>Net≈+9R;</li>
+<li>MaxDD≈4R.</li>
+</ul>
+<p>Это один из наиболее сильных LONG-кандидатов, но sample недостаточен для окончательного production proof.</p>
+<hr>
+<h1>15. SHORT ENGINE</h1>
+<p>LONG и SHORT не являются зеркальными стратегиями.</p>
+<p>SHORT — отдельная branch.</p>
+<p>Текущая research-конфигурация:</p>
+<pre><code>
+Bearish Elliott
++
+RSI
++
+Fib OFF
++
+W3 classification
++
+SHORT trigger
++
+0.75 ATR SL
++
+1.5R TP
+</code></pre>
+<p>SHORT не получает production status только потому, что отдельная историческая выборка показала высокий PF.</p>
+<hr>
+<h1>16. SHORT OOS EVIDENCE</h1>
+<p>Research configuration:</p>
+<pre><code>
+RSI + NoFib
+TP = 1.5R
+</code></pre>
+<p>Показала:</p>
+<ul>
+<li>Train N=42, PF≈1.36;</li>
+<li>Validation N=20, PF≈2.25;</li>
+<li>Final Test N=15, PF≈2.25;</li>
+<li>Final Expectancy≈+0.50R;</li>
+<li>Final Net≈+7.5R.</li>
+</ul>
+<p>Это:</p>
+<pre><code>
+PROMISING
+</code></pre>
+<p>но:</p>
+<pre><code>
+NOT PRODUCTION PROOF
+</code></pre>
+<p>Главное ограничение:</p>
+<pre><code>
+N = 15
+</code></pre>
+<hr>
+<h1>17. SHORT EXIT RESEARCH</h1>
+<p>Отдельное исследование exit geometry:</p>
+<pre><code>
+SL = 0.75 ATR
+TP = 1.5R
+</code></pre>
+<p>Final test:</p>
+<ul>
+<li>N≈41;</li>
+<li>PF≈1.43;</li>
+<li>Expectancy≈+0.22R;</li>
+<li>Net≈+9R.</li>
+</ul>
+<p>Это evidence в пользу execution geometry, но не доказательство полного SHORT system.</p>
+<p>Нельзя объединять:</p>
+<pre><code>
+directional evidence
++
+exit evidence
+</code></pre>
+<p>и считать результат автоматически production-validated.</p>
+<hr>
+<h1>18. WYCKOFF</h1>
+<p>Wyckoff:</p>
+<p><b>OPTIONAL / CONTEXTUAL CONFIRMATION</b></p>
+<p>Используется для:</p>
+<ul>
+<li>accumulation/distribution;</li>
+<li>volume participation;</li>
+<li>structural context;</li>
+<li>confidence adjustment.</li>
+</ul>
+<p>Wyckoff не может:</p>
+<ul>
+<li>самостоятельно создать LONG;</li>
+<li>самостоятельно создать SHORT;</li>
+<li>override Elliott;</li>
+<li>override structural invalidation.</li>
+</ul>
+<hr>
+<h1>19. WYCKOFF HARD-GATE ЗАПРЕЩЁН</h1>
+<p>Не использовать:</p>
+<pre><code>
+Elliott
++
+EMA200
++
+Wyckoff
+</code></pre>
+<p>как обязательный universal gate.</p>
+<p>Исторически строгая EMA200+Wyckoff комбинация имела слабый final OOS:</p>
+<pre><code>
+N = 8
+PF = 0.50
+Expectancy = -0.375R
+Net = -3R
+</code></pre>
+<p>Поэтому:</p>
+<pre><code>
+WYCKOFF = CONTEXT
+</code></pre>
+<p>а не universal mandatory gate.</p>
+<hr>
+<h1>20. FIBONACCI</h1>
+<p>Fibonacci:</p>
+<p><b>GEOMETRY / QUALITY LAYER</b></p>
+<p>Используется для:</p>
+<ul>
+<li>W2 geometry;</li>
+<li>W4 geometry;</li>
+<li>W5 target;</li>
+<li>retracement;</li>
+<li>extension;</li>
+<li>target validation;</li>
+<li>structural quality.</li>
+</ul>
+<p>Fibonacci:</p>
+<pre><code>
+НЕ является основным directional engine.
+</code></pre>
+<hr>
+<h1>21. FIB OFF</h1>
+<p><code>Fib OFF</code> — официальный branch parameter.</p>
+<p>Означает:</p>
+<blockquote>Fibonacci не является обязательным directional/entry filter в данной ветке.</blockquote>
+<p>Он всё ещё может вычисляться информационно.</p>
+<p>Исторически Fib OFF выглядел достаточно перспективно, поэтому не должен быть запрещён как подход.</p>
+<hr>
+<h1>22. SCHIFF</h1>
+<p>Schiff Pitchfork:</p>
+<p><b>RESEARCH ONLY / SECONDARY GEOMETRY</b></p>
+<p>Разрешено:</p>
+<ul>
+<li>median line;</li>
+<li>parallels;</li>
+<li>reaction zones;</li>
+<li>acceleration/deceleration;</li>
+<li>secondary confluence.</li>
+</ul>
+<p>Запрещено:</p>
+<blockquote>блокировать valid Elliott setup только потому, что Schiff не совпал.</blockquote>
+<p>Иерархия:</p>
+<pre><code>
+ELLIOTT = PRIMARY
+SCHIFF = SECONDARY
+</code></pre>
+<p>При конфликте:</p>
+<pre><code>
+ELLIOTT WINS
+</code></pre>
+<p>По текущим исследованиям стабильный самостоятельный incremental edge Schiff не доказан.</p>
+<hr>
+<h1>23. RSI</h1>
+<p>RSI:</p>
+<p><b>MOMENTUM CONFIRMATION</b></p>
+<p>Основные применения:</p>
+<ul>
+<li>SHORT;</li>
+<li>Extended W3 LONG;</li>
+<li>momentum branch.</li>
+</ul>
+<p>RSI не является самостоятельной directional strategy.</p>
+<hr>
+<h1>24. EXTENDED W3</h1>
+<p>Для LONG может существовать:</p>
+<pre><code>
+Extended W3
++
+RSI confirmation
+</code></pre>
+<p>как:</p>
+<pre><code>
+MOMENTUM LONG
+</code></pre>
+<p>Но эта ветка обязана проходить отдельный OOS test.</p>
+<p>Не hard-code её на основании одного aggregate/full-history PF.</p>
+<hr>
+<h1>25. EXECUTION</h1>
+<h3>LONG BASE</h3>
+<pre><code>
+SL = 1 ATR
+TP = 1.5R
+</code></pre>
+<h3>SHORT BASE</h3>
+<pre><code>
+SL = 0.75 ATR
+TP = 1.5R
+</code></pre>
+<p>Runner допускается только как отдельная frozen branch.</p>
+<hr>
+<h1>26. STRUCTURAL INVALIDATION VS EXECUTION STOP</h1>
+<p>Критическое различие:</p>
+<pre><code>
+STRUCTURAL INVALIDATION
+≠
+EXECUTION STOP
+</code></pre>
+<p>Правильная последовательность:</p>
+<pre><code>
+Structural invalidation
+↓
+Execution compatibility
+↓
+SL
+</code></pre>
+<p>Если выбранный SL несовместим со structural invalidation:</p>
+<pre><code>
+WAIT_RISK
+</code></pre>
+<p>Нельзя вручную расширять SL только ради сохранения сделки.</p>
+<hr>
+<h1>27. ENTRY POLICY</h1>
+<p>Entry определяется после:</p>
+<pre><code>
+Scenario
+↓
+Invalidation
+↓
+Trigger
+↓
+Execution
+</code></pre>
+<p>Нельзя сначала выбрать удобную цену входа, а затем подгонять под неё Elliott.</p>
+<hr>
+<h1>28. OHLC EXECUTION RULE</h1>
+<p>В backtest:</p>
+<ul>
+<li>сигнал должен быть causal;</li>
+<li>execution происходит с заранее определённой логикой;</li>
+<li>нельзя использовать информацию закрытия свечи для входа внутри этой же свечи, если она ещё не была известна;</li>
+<li>entry должен быть привязан к установленному execution convention;</li>
+<li>если TP и SL попадают в один OHLC bar и невозможно определить внутрибиржевую последовательность, применяется консервативное правило:</li>
+</ul>
+<pre><code>
+SL FIRST
+</code></pre>
+<hr>
+<h1>29. TRIGGER</h1>
+<p>Основной trigger timeframe:</p>
+<pre><code>
+M15
+</code></pre>
+<p>H1:</p>
+<pre><code>
+SETUP REFINEMENT
+</code></pre>
+<p>M5:</p>
+<pre><code>
+OPTIONAL EXECUTION REFINEMENT
+</code></pre>
+<p>Trigger должен быть:</p>
+<ul>
+<li>causal;</li>
+<li>заранее зарегистрирован;</li>
+<li>branch-specific;</li>
+<li>reproducible;</li>
+<li>не invalidated.</li>
+</ul>
+<hr>
+<h1>30. STATE MACHINE</h1>
+<p>Canonical states:</p>
+<pre><code>
+S00 ROUTING
+S01 DATA_VALIDATED
+S02 CAUSALITY_VALIDATED
+S03 MTF_CONTEXT_READY
+S04 STRUCTURE_VALIDATED
+S05 STRUCTURE_CLASSIFIED
+S06 W3_CLASSIFIED
+S07 BRANCH_ELIGIBLE
+S08 REGIME_VALIDATED
+S09 CONFIRMATION_VALIDATED
+S10 SCENARIO_VALIDATED
+S11 TRIGGER_VALIDATED
+S12 INVALIDATION_VALIDATED
+S13 EXECUTION_VALIDATED
+S14 TARGET_VALIDATED
+S15 RR_VALIDATED
+S16 DECISION_READY
+S17 SIGNAL_ISSUED
+S18 SIGNAL_FROZEN
+S19 NO_TRADE
+S20 POSITION_ACTIVE
+S21 OUTCOME_RECORDED
+S22 PERFORMANCE_RECORDED
+S23 CALIBRATION_ELIGIBILITY
+S24 MODEL_REVIEW
+S25 MODEL_ACCEPTED
+S26 MODEL_REJECTED
+S27 NEEDS_MORE_DATA
+
+S90 WAIT_DATA
+S91 WAIT_STRUCTURE
+S92 WAIT_CONFIRMATION
+S93 WAIT_SCENARIO
+S94 WAIT_TRIGGER
+S95 WAIT_RISK
+S96 WAIT_RR
+
+S98 PROCESS_STOPPED
+</code></pre>
+<hr>
+<h1>31. STATE INVARIANTS</h1>
+<p>Основные правила:</p>
+<h3>S06 W3</h3>
+<p>Используется только там, где W3 существует.</p>
+<h3>ABC / Failed Fifth</h3>
+<p>Могут skip W3 classifier.</p>
+<h3>S08</h3>
+<p>Regime policy:</p>
+<pre><code>
+REQUIRED
+CONTEXT_ONLY
+DISABLED
+</code></pre>
+<h3>S09</h3>
+<p>Проверяет только mandatory confirmations текущей branch.</p>
+<h3>S10</h3>
+<p>Отвечает за scenario.</p>
+<h3>S11</h3>
+<p>Отвечает за trigger.</p>
+<h3>S12</h3>
+<p>Отвечает за structural invalidation.</p>
+<h3>S13</h3>
+<p>Отвечает за executable setup.</p>
+<h3>S14</h3>
+<p>Отвечает за target.</p>
+<h3>S15</h3>
+<p>Отвечает за R:R.</p>
+<h3>S16</h3>
+<p>Decision gate.</p>
+<hr>
+<h1>32. HOLD</h1>
+<p>HOLD — это не случайный rollback.</p>
+<p>Это:</p>
+<blockquote>временное ожидание незавершённого causal condition в текущем analysis cycle.</blockquote>
+<hr>
+<h1>33. HOLD TRANSITIONS</h1>
+<h3>S90 WAIT_DATA</h3>
+<p>При появлении достаточных данных:</p>
+<pre><code>
+→ S03
+</code></pre>
+<p>При необратимой ошибке:</p>
+<pre><code>
+→ S98
+</code></pre>
+<p>При истечении analysis window:</p>
+<pre><code>
+→ S19
+</code></pre>
+<h3>S91 WAIT_STRUCTURE</h3>
+<p>После появления новой causal structure:</p>
+<pre><code>
+→ S04
+</code></pre>
+<p>При expiry:</p>
+<pre><code>
+→ S19
+</code></pre>
+<h3>S92 WAIT_CONFIRMATION</h3>
+<p>При выполнении mandatory confirmation:</p>
+<pre><code>
+→ S09
+</code></pre>
+<p>При постоянной блокировке branch:</p>
+<pre><code>
+→ S19
+</code></pre>
+<p>При изменении структуры:</p>
+<pre><code>
+→ S04
+</code></pre>
+<h3>S93 WAIT_SCENARIO</h3>
+<p>Когда Primary/Alternative становятся различимы:</p>
+<pre><code>
+→ S10
+</code></pre>
+<p>Если оба invalid:</p>
+<pre><code>
+→ S04
+</code></pre>
+<p>При expiry:</p>
+<pre><code>
+→ S19
+</code></pre>
+<h3>S94 WAIT_TRIGGER</h3>
+<p>При появлении trigger:</p>
+<pre><code>
+→ S11
+</code></pre>
+<p>Если trigger исчез, но scenario сохраняется:</p>
+<pre><code>
+→ S10
+</code></pre>
+<p>Если scenario invalid:</p>
+<pre><code>
+→ S04
+</code></pre>
+<p>При expiry:</p>
+<pre><code>
+→ S19
+</code></pre>
+<h3>S95 WAIT_RISK</h3>
+<p>При появлении valid risk configuration:</p>
+<pre><code>
+→ S13
+</code></pre>
+<p>При structural change:</p>
+<pre><code>
+→ S04
+</code></pre>
+<h3>S96 WAIT_RR</h3>
+<p>При новом валидном trigger:</p>
+<pre><code>
+→ S11
+</code></pre>
+<p>Если target становится валидным:</p>
+<pre><code>
+→ S14
+</code></pre>
+<p>При structural change:</p>
+<pre><code>
+→ S04
+</code></pre>
+<p>При expiry:</p>
+<pre><code>
+→ S19
+</code></pre>
+<h3>ANY HOLD</h3>
+<p>При critical:</p>
+<pre><code>
+DATA FAILURE
+CAUSALITY FAILURE
+MODEL FAILURE
+</code></pre>
+<p>→</p>
+<pre><code>
+S98
+</code></pre>
+<hr>
+<h1>34. NEW MARKET SNAPSHOT</h1>
+<p>Новый независимый запрос/новый market snapshot может создавать новый cycle:</p>
+<pre><code>
+S00 ROUTING
+</code></pre>
+<p>Но HOLD current-cycle state не должен случайно превращаться в новый analysis cycle без причины.</p>
+<hr>
+<h1>35. SIGNAL FREEZE</h1>
+<p>После:</p>
+<pre><code>
+S17 SIGNAL_ISSUED
+</code></pre>
+<p>переход:</p>
+<pre><code>
+S18 SIGNAL_FROZEN
+</code></pre>
+<p>После freeze:</p>
+<blockquote>сигнал нельзя переписывать задним числом.</blockquote>
+<p>Можно открыть новый independent cycle только при новом market state / explicit recalculation policy.</p>
+<hr>
+<h1>36. NO TRADE</h1>
+<pre><code>
+S19
+</code></pre>
+<p>означает:</p>
+<blockquote>конкретный analysis cycle завершён без сделки.</blockquote>
+<p>Не использовать <code>NO_TRADE</code> как замену HOLD.</p>
+<hr>
+<h1>37. SCENARIO ENGINE</h1>
+<p>Каждая сделка обязана иметь:</p>
+<pre><code>
+Primary Scenario
+Alternative Scenario
+Invalidation
+Trigger
+Target
+</code></pre>
+<p>Primary имеет приоритет.</p>
+<p>Alternative используется только если имеет независимое causal justification.</p>
+<p>Нельзя держать одновременно множество равноправных сценариев без policy resolution.</p>
+<hr>
+<h1>38. CONFLICT POLICY</h1>
+<p>Если:</p>
+<pre><code>
+Elliott bullish
+EMA200 bearish
+</code></pre>
+<p>для production LONG:</p>
+<pre><code>
+NO LONG
+</code></pre>
+<p>или:</p>
+<pre><code>
+WAIT
+</code></pre>
+<p>Если:</p>
+<pre><code>
+Elliott valid
+Schiff conflicting
+</code></pre>
+<p>то:</p>
+<pre><code>
+Elliott wins
+</code></pre>
+<p>Если:</p>
+<pre><code>
+Elliott invalid
+Wyckoff bullish
+RSI bullish
+</code></pre>
+<p>то:</p>
+<pre><code>
+NO TRADE
+</code></pre>
+<p>Индикатор не может создать отсутствующую Elliott structure.</p>
+<hr>
+<h1>39. GLOBAL SCORE ЗАПРЕЩЁН</h1>
+<p>Не использовать:</p>
+<pre><code>
+Elliott 30%
+EMA200 20%
+Wyckoff 20%
+RSI 15%
+Fib 10%
+Schiff 5%
+</code></pre>
+<p>как универсальный decision mechanism.</p>
+<p>Вместо этого:</p>
+<pre><code>
+MANDATORY GATES
++
+BRANCH LOGIC
++
+SCENARIO LOGIC
+</code></pre>
+<hr>
+<h1>40. CONFIDENCE</h1>
+<p>Confidence разрешён только как diagnostic/meta-variable.</p>
+<p>Он не должен заменять mandatory gates.</p>
+<p>Например:</p>
+<pre><code>
+confidence = high
+</code></pre>
+<p>не может отменить:</p>
+<pre><code>
+EMA200 gate failed
+</code></pre>
+<hr>
+<h1>41. DATA SOURCES</h1>
+<p>Для реального рынка агент должен получать актуальные:</p>
+<ul>
+<li>XAUUSD OHLC;</li>
+<li>M15;</li>
+<li>H1;</li>
+<li>H4;</li>
+<li>D1;</li>
+<li>volume/tick volume при наличии;</li>
+<li>EMA200;</li>
+<li>RSI;</li>
+<li>market context;</li>
+<li>при необходимости macro context.</li>
+</ul>
+<p>При отсутствии данных:</p>
+<pre><code>
+WAIT_DATA
+</code></pre>
+<p>Нельзя придумывать текущую цену.</p>
+<hr>
+<h1>42. LIVE MACRO CONTEXT</h1>
+<p>Macro context допускается как contextual filter.</p>
+<p>Могут учитываться:</p>
+<ul>
+<li>DXY;</li>
+<li>US yields;</li>
+<li>oil;</li>
+<li>major macro releases;</li>
+<li>risk-on/risk-off;</li>
+<li>high-impact news.</li>
+</ul>
+<p>Но macro не должен самостоятельно создавать Elliott signal.</p>
+<p>Иерархия:</p>
+<pre><code>
+STRUCTURE
+&gt;
+REGIME
+&gt;
+SCENARIO
+&gt;
+TRIGGER
+&gt;
+MACRO CONTEXT
+</code></pre>
+<p>Macro способен менять interpretation/risk context, но не создавать отсутствующую структуру.</p>
+<hr>
+<h1>43. NEWS</h1>
+<p>Для live analysis необходимо учитывать high-impact news risk.</p>
+<p>При экстремальном event risk:</p>
+<pre><code>
+WAIT
+</code></pre>
+<p>либо отдельная branch policy.</p>
+<p>Нельзя использовать будущую новость в историческом backtest.</p>
+<hr>
+<h1>44. PRIMARY BACKTEST ARCHITECTURE</h1>
+<p>Backtest должен воспроизводить live logical path.</p>
+<p>Canonical:</p>
+<pre><code>
+DATA AUDIT
+↓
+CAUSALITY
+↓
+MTF
+↓
+ELLIOTT
+↓
+STRUCTURE TYPE
+↓
+W3
+↓
+BRANCH
+↓
+REGIME
+↓
+CONFIRMATION
+↓
+SCENARIO
+↓
+TRIGGER
+↓
+INVALIDATION
+↓
+EXECUTION
+↓
+TARGET
+↓
+R:R
+↓
+OUTCOME
+</code></pre>
+<p>Нельзя отдельно тестировать strategy component и объявлять всю систему validated.</p>
+<hr>
+<h1>45. WALK-FORWARD</h1>
+<p>Основной validation framework:</p>
+<pre><code>
+365 DAYS TRAIN
+↓
+90 DAYS TEST
+↓
+SHIFT
+↓
+365 DAYS TRAIN
+↓
+90 DAYS TEST
+...
+</code></pre>
+<p>В каждой test window параметры frozen.</p>
+<hr>
+<h1>46. FROZEN PARAMETER RULE</h1>
+<p>В test window запрещено менять:</p>
+<ul>
+<li>SL;</li>
+<li>TP;</li>
+<li>filters;</li>
+<li>thresholds;</li>
+<li>weights;</li>
+<li>trigger;</li>
+<li>branch;</li>
+<li>signal rules.</li>
+</ul>
+<hr>
+<h1>47. ПРЕДЫДУЩИЙ XAUUSD WALK-FORWARD</h1>
+<p>Использованный dataset:</p>
+<pre><code>
+XAU/USD M15
+2022-01-24 09:00
+→
+2026-09-11 23:45
+</code></pre>
+<p>Размер:</p>
+<pre><code>
+≈109,812 valid M15 bars
+</code></pre>
+<p>Метод:</p>
+<pre><code>
+365D train
+→
+90D test
+→
+15 sequential folds
+</code></pre>
+<p>Пересекающийся pre-OOS сегмент исключался.</p>
+<p>Frozen baseline:</p>
+<ul>
+<li>stop 2.5 ATR;</li>
+<li>target 1.0R;</li>
+<li>max hold 96 M15 bars;</li>
+<li>D1 EMA200;</li>
+<li>next M15 open;</li>
+<li>conservative SL-first при TP+SL в одном bar.</li>
+</ul>
+<hr>
+<h1>48. WALK-FORWARD RESULTS</h1>
+<h3>Adaptive weights</h3>
+<ul>
+<li>Trades: 1055</li>
+<li>Win Rate: 53.8%</li>
+<li>PF: 1.17</li>
+<li>Expectancy: +0.077R</li>
+<li>Net: +80.86R</li>
+<li>MaxDD: 19.88R</li>
+</ul>
+<h3>Frozen weights</h3>
+<ul>
+<li>Trades: 1115</li>
+<li>Win Rate: 54.3%</li>
+<li>PF: <b>1.19</b></li>
+<li>Expectancy: <b>+0.088R</b></li>
+<li>Net: <b>+97.76R</b></li>
+<li>MaxDD: <b>17.04R</b></li>
+</ul>
+<h3>H4-aligned SHORT condition</h3>
+<p>D1 below EMA200 + H4 bearish:</p>
+<ul>
+<li>Trades: 1113</li>
+<li>Win Rate: <b>54.4%</b></li>
+<li>PF: <b>1.20</b></li>
+<li>Expectancy: <b>+0.090R</b></li>
+<li>Net: <b>+99.76R</b></li>
+<li>MaxDD: <b>17.04R</b></li>
+</ul>
+<p>Вывод:</p>
+<blockquote>adaptive switching не улучшила frozen system.</blockquote>
+<p>Следовательно:</p>
+<pre><code>
+FROZEN PARAMETERS &gt; ADAPTIVE WEIGHTS
+</code></pre>
+<p>в текущем evidence set.</p>
+<hr>
+<h1>49. ELLIOTT W5 TEST</h1>
+<p>Frozen Elliott W5:</p>
+<p>Rules:</p>
+<pre><code>
+W1-W2-W3-W4 → W5
+D1 EMA200 direction gate
+Wyckoff/volume = confirmation
+W3 non-extended = conservative branch
+Extended-W3 = LONG + RSI confirmation
+SL = 1 ATR
+TP = 1.5R
+</code></pre>
+<p>Final OOS:</p>
+<ul>
+<li>N=103</li>
+<li>WR≈43.7%</li>
+<li>PF≈1.164</li>
+<li>Expectancy≈+0.092R</li>
+<li>Net≈+9.5R</li>
+<li>MaxDD≈8.5R</li>
+</ul>
+<p>All sample:</p>
+<ul>
+<li>N=410</li>
+<li>PF≈1.387</li>
+<li>Expectancy≈+0.201R</li>
+</ul>
+<p>Это подтверждает, что Elliott W5 имеет положительный OOS signal, но edge умеренный.</p>
+<hr>
+<h1>50. EMA200 ABLATION</h1>
+<p>EMA200 filter:</p>
+<p>Final OOS:</p>
+<ul>
+<li>N=60</li>
+<li>PF≈1.147</li>
+<li>Expectancy≈+0.083R</li>
+<li>Net≈+5R</li>
+<li>MaxDD≈6R</li>
+</ul>
+<p>EMA200 оказался одним из наиболее устойчивых отдельных filters.</p>
+<hr>
+<h1>51. WYCKOFF EVIDENCE</h1>
+<p>Wyckoff=True overall:</p>
+<ul>
+<li>N=57;</li>
+<li>PF≈1.788;</li>
+<li>Expectancy≈+0.360R.</li>
+</ul>
+<p>Но строгая EMA200+Wyckoff final OOS:</p>
+<ul>
+<li>N=8;</li>
+<li>PF=0.50;</li>
+<li>Expectancy=-0.375R;</li>
+<li>Net=-3R.</li>
+</ul>
+<p>Поэтому aggregate Wyckoff PF не должен использоваться для universal hard gate.</p>
+<hr>
+<h1>52. FIB EVIDENCE</h1>
+<p>Full test:</p>
+<h3>Fib OFF</h3>
+<ul>
+<li>N≈220;</li>
+<li>PF≈1.50;</li>
+<li>Expectancy≈+0.25R.</li>
+</ul>
+<h3>Fib ON</h3>
+<ul>
+<li>N≈190;</li>
+<li>PF≈1.214;</li>
+<li>Expectancy≈+0.118R.</li>
+</ul>
+<p>Это не означает:</p>
+<pre><code>
+Fib useless
+</code></pre>
+<p>Это означает:</p>
+<blockquote>Fib не должен автоматически быть обязательным directional filter.</blockquote>
+<p>Он полезнее как geometry/quality layer.</p>
+<hr>
+<h1>53. OLD 2012–2022 FAILURE</h1>
+<p>Отдельная calibrated system на 2012–2022 показало:</p>
+<ul>
+<li>Overall N=150;</li>
+<li>PF≈0.49;</li>
+<li>Expectancy≈-0.338R;</li>
+<li>Net≈-50.7R;</li>
+<li>MaxDD≈49.7R.</li>
+</ul>
+<p>Train:</p>
+<ul>
+<li>PF≈1.22;</li>
+<li>Expectancy≈+0.098R.</li>
+</ul>
+<p>Validation:</p>
+<ul>
+<li>PF≈1.53;</li>
+<li>Expectancy≈+0.211R.</li>
+</ul>
+<p>Final independent test:</p>
+<ul>
+<li>N=26;</li>
+<li>PF≈0.73;</li>
+<li>Expectancy≈-0.154R;</li>
+<li>Net≈-4R.</li>
+</ul>
+<p>Long:</p>
+<ul>
+<li>N=18;</li>
+<li>PF≈1.0.</li>
+</ul>
+<p>Short:</p>
+<ul>
+<li>N=8;</li>
+<li>PF≈0.33.</li>
+</ul>
+<p>Главный вывод:</p>
+<blockquote>calibration может улучшить Train/Validation и при этом провалиться на новом regime.</blockquote>
+<p>Поэтому system must protect against overfitting.</p>
+<hr>
+<h1>54. PERFORMANCE METRICS</h1>
+<p>Каждый полный test обязан выдавать:</p>
+<pre><code>
+Trades
+Win Rate
+PF
+Expectancy R
+Net R
+Max Drawdown
+Max Losing Streak
+MAE
+MFE
+TP Hit Rate
+SL Before TP
+LONG stats
+SHORT stats
+Year-by-year
+Regime-by-regime
+Rolling PF
+Rolling Expectancy
+</code></pre>
+<hr>
+<h1>55. ГЛАВНАЯ МЕТРИКА</h1>
+<p>Оптимизировать не:</p>
+<pre><code>
+Win Rate
+</code></pre>
+<p>и не:</p>
+<pre><code>
+PF
+</code></pre>
+<p>отдельно.</p>
+<p>Основной objective:</p>
+<pre><code>
+OOS EXPECTANCY
++
+STABILITY
++
+CONTROLLED DRAWDOWN
+</code></pre>
+<p>PF — дополнительная метрика качества.</p>
+<hr>
+<h1>56. УСПЕШНОСТЬ ТЕКУЩЕЙ СИСТЕМЫ</h1>
+<p>Наиболее полно проверенная walk-forward configuration:</p>
+<pre><code>
+≈54.4% WR
+PF ≈ 1.20
+Expectancy ≈ +0.090R
+Net ≈ +99.76R
+MaxDD ≈ 17.04R
+N ≈ 1113
+</code></pre>
+<p>Следовательно:</p>
+<blockquote>текущая исследованная конфигурация имеет положительное историческое/OOS математическое ожидание.</blockquote>
+<p>Но нельзя говорить:</p>
+<pre><code>
+&quot;вся v1.8 имеет 54.4% win rate&quot;
+</code></pre>
+<p>потому что вся State Machine ещё не прошла unified end-to-end OOS.</p>
+<hr>
+<h1>57. PRODUCTION STATUS LEVELS</h1>
+<p>Каждая branch получает статус:</p>
+<h3>P0</h3>
+<p>RESEARCH</p>
+<p>Недостаточно доказательств.</p>
+<h3>P1</h3>
+<p>OOS POSITIVE</p>
+<p>Final OOS положительный.</p>
+<h3>P2</h3>
+<p>WALK-FORWARD VALIDATED</p>
+<p>Положительный rolling/walk-forward evidence.</p>
+<h3>P3</h3>
+<p>PRODUCTION CANDIDATE</p>
+<p>End-to-end validation пройдена.</p>
+<h3>P4</h3>
+<p>PRODUCTION</p>
+<p>Прошла forward test и production acceptance.</p>
+<hr>
+<h1>58. CURRENT COMPONENT STATUS</h1>
+<table><thead><tr><th>Component</th><th>Status</th></tr></thead><tbody>
+<tr><td>Elliott W5</td><td>P2</td></tr>
+<tr><td>Elliott + EMA200</td><td>P2</td></tr>
+<tr><td>LONG EMA200</td><td>P2</td></tr>
+<tr><td>LONG EMA200 + Fib OFF</td><td>P1/P2 candidate</td></tr>
+<tr><td>W3 classification</td><td>P1/P2 diagnostic</td></tr>
+<tr><td>SHORT RSI + Fib OFF</td><td>P1</td></tr>
+<tr><td>SHORT 0.75 ATR / 1.5R</td><td>P1</td></tr>
+<tr><td>Wyckoff</td><td>P1 contextual</td></tr>
+<tr><td>Fibonacci</td><td>P1 geometry</td></tr>
+<tr><td>Schiff</td><td>P0 research</td></tr>
+<tr><td>ABC</td><td>P0/P1 separate branch</td></tr>
+<tr><td>Failed Fifth</td><td>P0 research</td></tr>
+<tr><td>Full State Machine</td><td>P0 until end-to-end OOS</td></tr>
+</tbody></table>
+<hr>
+<h1>59. COMPONENT VALIDATION ≠ SYSTEM VALIDATION</h1>
+<p>Это одно из главных правил агента.</p>
+<p>Даже если:</p>
+<pre><code>
+Elliott OOS positive
+EMA200 OOS positive
+SHORT OOS positive
+Exit geometry positive
+</code></pre>
+<p>это ещё не означает:</p>
+<pre><code>
+FULL SYSTEM VALIDATED
+</code></pre>
+<p>Нужен:</p>
+<pre><code>
+END-TO-END OOS
+</code></pre>
+<hr>
+<h1>60. END-TO-END ACCEPTANCE</h1>
+<p>Следующая production version может быть ACCEPTED только при:</p>
+<pre><code>
+DATA VALID
+AND
+CAUSAL
+AND
+NO LOOK-AHEAD
+AND
+STATE MACHINE COMPLETE
+AND
+BRANCH LOGIC REPRODUCIBLE
+AND
+LONG/SHORT SEPARATED
+AND
+EXECUTION FROZEN
+AND
+OHLC RESOLUTION DEFINED
+AND
+FINAL OOS EXPECTANCY &gt; 0
+AND
+ROLLING OOS STABLE
+AND
+SAMPLE SUFFICIENT
+AND
+DRAWDOWN ACCEPTABLE
+</code></pre>
+<hr>
+<h1>61. OOS ACCEPTANCE</h1>
+<p>Минимум:</p>
+<pre><code>
+Final OOS Expectancy &gt; 0
+</code></pre>
+<p>Но этого недостаточно.</p>
+<p>Проверять:</p>
+<ul>
+<li>PF;</li>
+<li>Net R;</li>
+<li>MaxDD;</li>
+<li>rolling expectancy;</li>
+<li>losing streak;</li>
+<li>LONG;</li>
+<li>SHORT;</li>
+<li>year;</li>
+<li>regime;</li>
+<li>stability;</li>
+<li>sample size.</li>
+</ul>
+<hr>
+<h1>62. ROLLING STABILITY</h1>
+<p>Нельзя принимать system только по aggregate result.</p>
+<p>Проверять rolling:</p>
+<pre><code>
+20 trades
+30 trades
+50 trades
+</code></pre>
+<p>или:</p>
+<pre><code>
+90D
+180D
+</code></pre>
+<p>в зависимости от frequency.</p>
+<p>Если aggregate PF высокий, но rolling OOS нестабилен:</p>
+<pre><code>
+NEEDS_MORE_DATA
+</code></pre>
+<p>или:</p>
+<pre><code>
+REJECT
+</code></pre>
+<hr>
+<h1>63. CALIBRATION POLICY</h1>
+<h3>&lt;10 trades</h3>
+<pre><code>
+NO PARAMETER CHANGES
+</code></pre>
+<p>Только observation.</p>
+<h3>10–29</h3>
+<pre><code>
+SOFT RESEARCH
+</code></pre>
+<h3>30–49</h3>
+<pre><code>
+NORMAL CALIBRATION
+</code></pre>
+<h3>50+</h3>
+<pre><code>
+FULL CALIBRATION
+</code></pre>
+<p>Любое изменение parameters требует нового validation cycle.</p>
+<hr>
+<h1>64. FINAL OOS FREEZE</h1>
+<p>Нельзя calibrate по Final OOS.</p>
+<p>Правильная sequence:</p>
+<pre><code>
+TRAIN
+↓
+CALIBRATION
+↓
+VALIDATION
+↓
+FREEZE
+↓
+FINAL OOS
+</code></pre>
+<p>После просмотра Final OOS:</p>
+<pre><code>
+NO RETUNING
+</code></pre>
+<hr>
+<h1>65. SELF-LEARNING</h1>
+<p>Self-learning должен быть controlled.</p>
+<p>Правильная sequence:</p>
+<pre><code>
+OBSERVATION
+↓
+ERROR CLASSIFICATION
+↓
+HYPOTHESIS
+↓
+PRE-REGISTERED RULE
+↓
+BACKTEST
+↓
+VALIDATION
+↓
+OOS
+↓
+ACCEPT / REJECT / NEEDS MORE DATA
+</code></pre>
+<p>Агенту запрещено самостоятельно менять production logic только потому, что последние сделки были убыточными.</p>
+<hr>
+<h1>66. ERROR CLASSIFICATION</h1>
+<p>Каждый негативный outcome классифицировать как минимум по одному классу:</p>
+<pre><code>
+STRUCTURE ERROR
+REGIME ERROR
+BRANCH ERROR
+CONFIRMATION ERROR
+SCENARIO ERROR
+TRIGGER ERROR
+INVALIDATION ERROR
+EXECUTION ERROR
+RISK ERROR
+DATA ERROR
+OVERFIT
+</code></pre>
+<p>Сначала классификация.</p>
+<p>Только потом гипотеза.</p>
+<p>Не менять стратегию немедленно.</p>
+<hr>
+<h1>67. VERSIONING</h1>
+<p>Каждое изменение должно иметь:</p>
+<pre><code>
+VERSION
+DATE
+CHANGE
+HYPOTHESIS
+DATASET
+TRAIN
+VALIDATION
+OOS
+DECISION
+</code></pre>
+<p>Пример:</p>
+<pre><code>
+v1.8
+Added exact mandatory gates
+No parameter changes
+No production promotion
+</code></pre>
+<hr>
+<h1>68. RESEARCH PRINCIPLE</h1>
+<p>Любой новый фактор сначала проходит:</p>
+<pre><code>
+RESEARCH
+</code></pre>
+<p>потом:</p>
+<pre><code>
+ABLATION
+</code></pre>
+<p>потом:</p>
+<pre><code>
+WALK-FORWARD
+</code></pre>
+<p>потом:</p>
+<pre><code>
+OOS
+</code></pre>
+<p>и только затем может попасть в production branch.</p>
+<hr>
+<h1>69. НОВЫЕ ФАКТОРЫ</h1>
+<p>Новый factor не может стать mandatory gate просто потому, что:</p>
+<ul>
+<li>он логически красив;</li>
+<li>он хорошо объясняет исторический график;</li>
+<li>он дал высокий PF;</li>
+<li>он хорошо выглядит на нескольких сделках.</li>
+</ul>
+<p>Нужны:</p>
+<pre><code>
+causal definition
++
+predefined rule
++
+out-of-sample validation
++
+stability
+</code></pre>
+<hr>
+<h1>70. НЕЛЬЗЯ ИСПОЛЬЗОВАТЬ</h1>
+<p>Агенту запрещено:</p>
+<ul>
+<li>look-ahead;</li>
+<li>future outcome для label текущего entry;</li>
+<li>hindsight Elliott counting;</li>
+<li>изменение stop после entry без зарегистрированной policy;</li>
+<li>изменение target ради сохранения R:R;</li>
+<li>использование будущих swing points;</li>
+<li>подгонка параметров под Final OOS;</li>
+<li>hard-code по одной удачной серии;</li>
+<li>превращение indicator conflict в автоматический entry;</li>
+<li>inventing missing market data.</li>
+</ul>
+<hr>
+<h1>71. ABSOLUTE RULES</h1>
+<h3>RULE 1</h3>
+<p>Elliott определяет structure.</p>
+<h3>RULE 2</h3>
+<p>EMA200 определяет regime.</p>
+<h3>RULE 3</h3>
+<p>W3 определяет structural class.</p>
+<h3>RULE 4</h3>
+<p>LONG и SHORT имеют независимые branches.</p>
+<h3>RULE 5</h3>
+<p>Wyckoff не является universal mandatory gate.</p>
+<h3>RULE 6</h3>
+<p>Fibonacci не является directional engine.</p>
+<h3>RULE 7</h3>
+<p>Fib OFF является допустимой отдельной configuration.</p>
+<h3>RULE 8</h3>
+<p>Schiff не может override Elliott.</p>
+<h3>RULE 9</h3>
+<p>Failed Fifth не должен использовать future confirmation.</p>
+<h3>RULE 10</h3>
+<p>ABC не смешивается с W5.</p>
+<h3>RULE 11</h3>
+<p>Structural invalidation ≠ execution stop.</p>
+<h3>RULE 12</h3>
+<p>HOLD имеет только зарегистрированные resume transitions.</p>
+<h3>RULE 13</h3>
+<p>Frozen signal нельзя переписывать.</p>
+<h3>RULE 14</h3>
+<p>Final OOS нельзя использовать для calibration.</p>
+<h3>RULE 15</h3>
+<p>Component OOS ≠ system validation.</p>
+<h3>RULE 16</h3>
+<p>Нет mandatory gate → нет trade.</p>
+<h3>RULE 17</h3>
+<p>Нет causal data → нет analysis.</p>
+<h3>RULE 18</h3>
+<p>Нет valid structure → нет indicator-based substitute.</p>
+<h3>RULE 19</h3>
+<p>Нет acceptable R:R → WAIT.</p>
+<h3>RULE 20</h3>
+<p>Нет production approval → branch считается research.</p>
+<hr>
+<h1>72. AGENT DECISION TEMPLATE</h1>
+<p>При каждом live market request агент должен internally сформировать:</p>
+<pre><code>
+DATA STATUS
+CAUSALITY STATUS
+MTF STATUS
+
+ELLIOTT STRUCTURE
+STRUCTURE TYPE
+W3 CLASS
+
+REGIME
+BRANCH
+
+MANDATORY CONFIRMATIONS
+
+PRIMARY SCENARIO
+ALTERNATIVE SCENARIO
+
+TRIGGER
+
+STRUCTURAL INVALIDATION
+EXECUTION STOP
+
+ENTRY
+TARGET
+R:R
+
+FINAL DECISION:
+LONG / SHORT / WAIT
+
+CURRENT STATE:
+Sxx
+
+REASON FOR DECISION
+
+MODEL VERSION
+</code></pre>
+<hr>
+<h1>73. LIVE OUTPUT POLICY</h1>
+<p>Если все gates пройдены:</p>
+<pre><code>
+LONG
+</code></pre>
+<p>или:</p>
+<pre><code>
+SHORT
+</code></pre>
+<p>с обязательными:</p>
+<ul>
+<li>entry;</li>
+<li>SL;</li>
+<li>TP;</li>
+<li>invalidation;</li>
+<li>R:R;</li>
+<li>timeframe;</li>
+<li>scenario.</li>
+</ul>
+<p>Если обязательное условие ещё не наступило:</p>
+<pre><code>
+WAIT / HOLD
+</code></pre>
+<p>и назвать:</p>
+<blockquote>какое именно mandatory condition отсутствует.</blockquote>
+<p>Если opportunity expired:</p>
+<pre><code>
+NO_TRADE
+</code></pre>
+<p>Если data/causal/model failure:</p>
+<pre><code>
+STOP
+</code></pre>
+<hr>
+<h1>74. ПРИМЕР КОРРЕКТНОГО WAIT</h1>
+<p>Не:</p>
+<blockquote>&quot;рынок пока не очень хороший.&quot;</blockquote>
+<p>А:</p>
+<pre><code>
+STATE = S94 WAIT_TRIGGER
+
+Elliott = VALID
+EMA200 = PASS
+W3 = CLASS A
+Scenario = VALID
+Invalidation = VALID
+RR = VALID
+Trigger = NOT PRESENT
+
+Decision = WAIT
+Resume condition = valid M15 trigger
+</code></pre>
+<hr>
+<h1>75. ПРИМЕР КОРРЕКТНОГО NO TRADE</h1>
+<pre><code>
+STATE = S19
+
+Elliott = VALID
+EMA200 = PASS
+Scenario = INVALIDATED
+New causal scenario = NOT READY
+
+Decision = NO_TRADE
+Reason = opportunity expired
+</code></pre>
+<hr>
+<h1>76. ПРИМЕР КОРРЕКТНОГО STOP</h1>
+<pre><code>
+STATE = S98
+
+Data = incomplete
+or
+Look-ahead detected
+or
+causal timestamp failure
+or
+model integrity failure
+
+Decision = STOP
+</code></pre>
+<hr>
+<h1>77. PRIMARY RESEARCH PRIORITY</h1>
+<p>На текущем этапе больше всего внимания уделять:</p>
+<pre><code>
+ELLIOTT + D1 EMA200 + W3 CLASSIFICATION + LONG
+</code></pre>
+<p>Затем:</p>
+<pre><code>
+EMA200 + Fib OFF + LONG
+</code></pre>
+<p>Отдельно:</p>
+<pre><code>
+ELLIOTT + RSI + Fib OFF + SHORT
+</code></pre>
+<p>Контекст:</p>
+<pre><code>
+WYCKOFF
+</code></pre>
+<p>Геометрия:</p>
+<pre><code>
+FIBONACCI
+</code></pre>
+<p>Исследовательская геометрия:</p>
+<pre><code>
+SCHIFF
+</code></pre>
+<p>Отдельные branches:</p>
+<pre><code>
+ABC
+FAILED FIFTH
+</code></pre>
+<hr>
+<h1>78. ЧТО НЕ НУЖНО ДЕЛАТЬ СЕЙЧАС</h1>
+<p>Не нужно:</p>
+<ul>
+<li>добавлять новые индикаторы просто ради увеличения числа подтверждений;</li>
+<li>превращать Wyckoff в hard gate;</li>
+<li>возвращать adaptive weights без нового evidence;</li>
+<li>делать LONG и SHORT зеркальными;</li>
+<li>оптимизировать только Win Rate;</li>
+<li>оптимизировать только PF;</li>
+<li>откручивать параметры после каждого losing streak;</li>
+<li>повышать branch status по одному маленькому sample;</li>
+<li>использовать Schiff как veto;</li>
+<li>смешивать разные structure classes в один backtest без labeling.</li>
+</ul>
+<hr>
+<h1>79. CURRENT SYSTEM SUCCESS SUMMARY</h1>
+<p>Наиболее полно проверенная frozen/walk-forward configuration показывает примерно:</p>
+<pre><code>
+Trades ≈ 1113
+Win Rate ≈ 54.4%
+PF ≈ 1.20
+Expectancy ≈ +0.090R
+Net ≈ +99.76R
+MaxDD ≈ 17.04R
+</code></pre>
+<p>Это означает:</p>
+<blockquote>система в исследованной configuration имеет положительное OOS математическое ожидание.</blockquote>
+<p>Но это не означает, что вся current State Machine уже production-proven.</p>
+<hr>
+<h1>80. MAIN LESSON FROM HISTORY</h1>
+<p>Система уже доказала одну особенно важную вещь:</p>
+<blockquote><b>Положительный Train/Validation результат сам по себе ничего не гарантирует.</b></blockquote>
+<p>Исторический пример:</p>
+<pre><code>
+Train PF ≈ 1.22
+Validation PF ≈ 1.53
+Final Test PF ≈ 0.73
+</code></pre>
+<p>Следовательно:</p>
+<pre><code>
+GENERALIZATION &gt; FIT
+</code></pre>
+<p>и:</p>
+<pre><code>
+OOS &gt; HISTORICAL BEAUTY
+</code></pre>
+<hr>
+<h1>81. FINAL CANONICAL ARCHITECTURE</h1>
+<p>Главный pipeline:</p>
+<pre><code>
+                         MARKET DATA
+                              ↓
+                       DATA INTEGRITY
+                              ↓
+                          CAUSALITY
+                              ↓
+                        MTF CONTEXT
+                              ↓
+                      ELLIOTT STRUCTURE
+                              ↓
+                      STRUCTURE TYPE
+                    ┌─────────┼─────────┐
+                    ↓         ↓         ↓
+                 IMPULSE      ABC    FAILED FIFTH
+                    ↓
+              W3 CLASSIFICATION
+                    ↓
+              BRANCH ELIGIBILITY
+                    ↓
+                D1 EMA200
+                    ↓
+          MANDATORY CONFIRMATION
+                    ↓
+                  SCENARIO
+                    ↓
+                  TRIGGER
+                    ↓
+               INVALIDATION
+                    ↓
+                 EXECUTION
+                    ↓
+                  TARGET
+                    ↓
+                    R:R
+                    ↓
+                  DECISION
+               ┌────┼────┐
+               ↓    ↓    ↓
+             LONG SHORT WAIT
+               ↓    ↓
+          SIGNAL FREEZE
+               ↓
+          POSITION ACTIVE
+               ↓
+             OUTCOME
+               ↓
+          PERFORMANCE
+               ↓
+        MODEL REVIEW
+               ↓
+ ACCEPT / REJECT / MORE DATA
+</code></pre>
+<hr>
+<h1>82. FINAL PRODUCTION CANDIDATE</h1>
+<pre><code>
+ELLIOTT W1-W2-W3-W4
+        ↓
+FORECAST W5
+        ↓
+D1 EMA200
+        ↓
+W3 CLASS
+        ↓
+LONG
+        ↓
+M15 TRIGGER
+        ↓
+STRUCTURAL INVALIDATION
+        ↓
+1 ATR SL
+        ↓
+1.5R TP
+        ↓
+R:R
+        ↓
+LONG
+</code></pre>
+<hr>
+<h1>83. SECONDARY LONG</h1>
+<pre><code>
+ELLIOTT
++
+D1 EMA200
++
+Fib OFF
++
+LONG
+</code></pre>
+<p>Статус:</p>
+<pre><code>
+PROMISING RESEARCH / P1-P2 CANDIDATE
+</code></pre>
+<hr>
+<h1>84. SHORT RESEARCH</h1>
+<pre><code>
+BEARISH ELLIOTT
++
+D1 EMA200
++
+RSI
++
+Fib OFF
++
+W3
++
+SHORT TRIGGER
++
+0.75 ATR SL
++
+1.5R TP
+</code></pre>
+<p>Статус:</p>
+<pre><code>
+P1 RESEARCH
+</code></pre>
+<hr>
+<h1>85. FINAL AGENT RULE</h1>
+<p>Агент должен считать setup valid только тогда, когда выполнена логическая цепочка:</p>
+<pre><code>
+DATA
+AND
+CAUSALITY
+AND
+ELLIOTT
+AND
+STRUCTURE
+AND
+BRANCH
+AND
+REGIME
+AND
+MANDATORY CONFIRMATION
+AND
+SCENARIO
+AND
+TRIGGER
+AND
+INVALIDATION
+AND
+EXECUTION
+AND
+TARGET
+AND
+RR
+</code></pre>
+<p>Если хотя бы одно обязательное условие:</p>
+<pre><code>
+FALSE
+</code></pre>
+<p>то:</p>
+<pre><code>
+NO ENTRY
+</code></pre>
+<p>Если условие ещё не определено, но может стать валидным:</p>
+<pre><code>
+HOLD
+</code></pre>
+<p>Если opportunity окончательно исчезла:</p>
+<pre><code>
+NO_TRADE
+</code></pre>
+<p>Если нарушена причинность/целостность модели:</p>
+<pre><code>
+STOP
+</code></pre>
+<hr>
+<h1>86. ФИНАЛЬНЫЙ СТАТУС ВСЕЙ СИСТЕМЫ</h1>
+<p>Текущая система:</p>
+<p><b>не является доказанной безусловно прибыльной production-системой.</b></p>
+<p>Но она уже имеет:</p>
+<ul>
+<li>causal architecture;</li>
+<li>Elliott-centered structure;</li>
+<li>D1 EMA200 regime;</li>
+<li>explicit branches;</li>
+<li>mandatory gates;</li>
+<li>State Machine;</li>
+<li>separate LONG/SHORT logic;</li>
+<li>execution rules;</li>
+<li>OOS evidence;</li>
+<li>walk-forward evidence;</li>
+<li>anti-overfitting rules;</li>
+<li>calibration protocol;</li>
+<li>self-learning protocol;</li>
+<li>status hierarchy.</li>
+</ul>
+<p>Главная доказанная quantitative evidence:</p>
+<pre><code>
+≈54.4% WR
+PF ≈1.20
+Expectancy ≈ +0.090R
+≈+99.76R
+MaxDD ≈17.04R
+N≈1113
+</code></pre>
+<p>Главный сильный исследовательский LONG candidate:</p>
+<pre><code>
+EMA200 + LONG + Fib OFF
+PF ≈1.75
+Expectancy ≈+0.346R
+N=26
+</code></pre>
+<p>Главный исследовательский SHORT candidate:</p>
+<pre><code>
+RSI + Fib OFF
+PF ≈2.25 final test
+Expectancy ≈+0.50R
+N=15
+</code></pre>
+<p>Главный вывод:</p>
+<blockquote><b>У системы уже есть обнаруженный и воспроизводимый положительный edge на части исторических/OOS конфигураций, но следующий обязательный этап — единый end-to-end walk-forward/OOS тест всей State Machine с теми же правилами, которые используются live.</b></blockquote>
+<p>Именно этот тест должен определить переход:</p>
+<pre><code>
+P2
+→
+P3
+→
+P4
+</code></pre></div></main><footer>spec v1.8 · freeze v2 · engine v2 · собрано 2026-09-16 10:46 UTC<br>build 260916-89364b · не является инвестиционной рекомендацией.</footer><script>
+(function(){
+  var t = localStorage.getItem("xauusd_theme");
+  if (t === "tech") document.documentElement.classList.add("tech");
+  window.toggleTheme = function(){
+    var on = document.documentElement.classList.toggle("tech");
+    localStorage.setItem("xauusd_theme", on ? "tech" : "magic");
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = on ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  };
+  document.addEventListener("DOMContentLoaded", function(){
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = document.documentElement.classList.contains("tech") ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  });
+})();
+</script></body></html>

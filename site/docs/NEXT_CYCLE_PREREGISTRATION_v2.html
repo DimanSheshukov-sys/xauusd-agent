@@ -1,0 +1,132 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pre-registration следующего цикла · XAUUSD Elliott Agent</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230b1220%27/%3E%3Crect x=%2714.5%27 y=%276%27 width=%273%27 height=%2720%27 fill=%27%23f0b429%27/%3E%3Crect x=%2710%27 y=%2711%27 width=%2712%27 height=%2710%27 fill=%27%23f0b429%27/%3E%3C/svg%3E"><link rel="stylesheet" href="../magic.css"></head><body><nav class="top"><b>XAUUSD ELLIOTT AGENT</b><a href="../index.html">LIVE</a><a href="../reports/TRADE_JOURNAL.html">Журнал сделок</a><a href="../reports/index.html">Отчёты</a><a href="../docs/index.html">Документы</a><a href="../data/">Данные</a></nav><main><div class="doc"><h1>NEXT CYCLE PRE-REGISTRATION v2</h1>
+<p><b>Статус: PRE-REGISTERED (ожидает утверждения).</b> Составлен по итогам <code>reports/EXPERIMENT_v2.md</code>.</p>
+<p>Согласно §63–65 канона агент <b>не меняет production logic самостоятельно</b>: сначала классификация</p>
+<p>ошибок → гипотеза → pre-registered rule → валидация на <b>новых</b> данных → accept/reject.</p>
+<p>Дата: 2026-09-16 • Движок: <code>engine/</code> v2 • Freeze параметров: <code>PARAMETER_FREEZE_v1.md</code> (не менялся)</p>
+<hr>
+<h2>1. Наблюдения (факты прогона, без интерпретаций)</h2>
+<table><thead><tr><th>№</th><th>Факт</th><th>Цифры</th></tr></thead><tbody>
+<tr><td>O1</td><td>Геометрия §25/§82 (1 ATR / 1.5R) на M15 <b>убыточна после издержек</b></td><td>N=243, PF gross 1.067 → net 0.876, Exp −0.082R, Net −19.9R</td></tr>
+<tr><td>O2</td><td>Геометрия §47 (2.5 ATR / 1.0R) <b>положительна и устойчива</b></td><td>N=163, WR 60.1%, PF net 1.373, Exp +0.156R, Net +25.5R, t=2.02, p=0.043, MaxDD −9.9R</td></tr>
+<tr><td>O3</td><td>O2 проходит все 11 проверяемых критериев §60/§61</td><td>rolling stability PASS (77.8 / 79.9 / 91.2 % окон Exp&gt;0)</td></tr>
+<tr><td>O4</td><td>Издержки решают всё: cost/R = 0.07R для G_PROD против 0.029R для G_BASE47</td><td>спред 0.40–0.50 USD при R = 7 vs 18 USD</td></tr>
+<tr><td>O5</td><td><b>SHORT не воспроизводится ни в одной ветке</b></td><td>B06 (§16, канон PF 2.25): мой PF net 0.706 (G_BASE47) / 0.402 (G_PROD, p=0.021 — значимо отрицательно). B07 (§48): 0.869 / 0.456. B05: N=5</td></tr>
+<tr><td>O6</td><td><b>W3 CLASS A не воспроизводится</b> (канон §9: PF 2.217, «сильнейший диагностический класс»)</td><td>мой PF net 0.947, Exp −0.030R, N=49</td></tr>
+<tr><td>O7</td><td>Классы B и C близки к канону</td><td>B: 1.132 (канон 1.356) • C: 1.002 (канон 1.221)</td></tr>
+<tr><td>O8</td><td>Сильнейшая изолированная ветка — <b>B04 Extended-W3 + RSI (momentum LONG)</b></td><td>G_BASE47: N=91, WR 64.8%, PF net 1.697, Exp +0.256R, Net +23.3R, p=0.011</td></tr>
+<tr><td>O9</td><td>B02 (§14 EMA200+FibOFF) подтверждает направление канона на большей выборке</td><td>N=143, PF net 1.514, Exp +0.202R, p=0.013 (канон: N=26, PF 1.75)</td></tr>
+<tr><td>O10</td><td>Кросс-проверка на <b>реальном золоте</b> (GC=F H1, 730 дней) положительна в обеих геометриях</td><td>G_PROD: N=67, PF 1.510, Exp +0.257R • G_BASE47: N=44, PF 1.683, Exp +0.253R</td></tr>
+<tr><td>O11</td><td>Год 2024 отрицательный для обеих геометрий</td><td>G_BASE47 2024: N=13, PF 0.395, −5.8R</td></tr>
+<tr><td>O12</td><td>Трактовка §26 «SL за invalidation» (WIDE) <b>неторгуема</b> при 1 ATR</td><td>G_PROD_WIDE: N=0 (все отбрарованы G12)</td></tr>
+<tr><td>O13</td><td>G01 CAUSALITY подтверждён инструментально</td><td>T1 8/8, T2 8/8, T3 PASS</td></tr>
+<tr><td>O14</td><td>STRUCT-exit не срабатывает ни разу при трактовке <code>tight</code></td><td>0.0% выходов по STRUCT: SL всегда ближе invalidation</td></tr>
+</tbody></table>
+<h2>2. Классификация ошибок (§66) — до гипотез</h2>
+<table><thead><tr><th>Наблюдение</th><th>Класс ошибки</th><th>Комментарий</th></tr></thead><tbody>
+<tr><td>O1/O4</td><td><b>RISK ERROR + EXECUTION ERROR</b></td><td>R слишком мал относительно стоимости сделки; структура сигнала не виновата (PF gross &gt; 1)</td></tr>
+<tr><td>O5</td><td><b>BRANCH ERROR + CONFIRMATION ERROR</b></td><td>SHORT-ветки не воспроизведены независимой реализацией; возможен OVERFIT прежней выборки (N=15)</td></tr>
+<tr><td>O6</td><td><b>OVERFIT / BRANCH ERROR</b></td><td>prior из §9 не подтвердился; вероятная причина — малая выборка канона (N=57) + иная разметка волн</td></tr>
+<tr><td>O11</td><td><b>REGIME ERROR</b></td><td>2024 — флэт/контртренд; требуется regime-срез в отчётности</td></tr>
+<tr><td>O12/O14</td><td><b>DATA/DEFINITION ERROR (канон)</b></td><td>§26 неоднозначен; нужна явная формулировка в каноне</td></tr>
+</tbody></table>
+<h2>3. PRE-REGISTERED гипотезы для цикла v2</h2>
+<p>Каждая гипотеза тестируется <b>только на новых данных</b> (см. §4). Никаких изменений по итогам</p>
+<p>исследовательского прогона 2022–2026 не вносится — этот период объявляется <b>used research sample</b>.</p>
+<h3>H1 — Execution geometry: R должен быть ≥ 2.5 ATR(M15) либо ТФ исполнения H1</h3>
+<pre><code>
+Правило: SL = 2.5 ATR(exec TF), TP = 1.0R, max hold 96 баров exec TF
+Основание: O1, O2, O4, O10
+Критерий ACCEPT: Exp net &gt; 0 AND p &lt; 0.05 AND rolling ≥60% окон Exp&gt;0 AND N ≥ (1.96·SD/Exp)²
+Критерий REJECT: Exp net ≤ 0 OR p ≥ 0.05
+</code></pre>
+<h3>H2 — LONG-only: SHORT-ветки перевести в P0 до независимого подтверждения</h3>
+<pre><code>
+Правило: B05/B06/B07 = DISABLED (не торгуются); LONG-ветки B01–B04 активны
+Основание: O5 (все SHORT-ветки отрицательны, одна значимо)
+Критерий ACCEPT: LONG-only Exp net &gt; 0, p &lt; 0.05, rolling PASS
+Обязательное условие: отдельно зафиксировать, что SHORT отключён НЕ потому, что убыточен
+  на research sample, а потому, что его evidence (N=15/20/29) не проходит порог sample sufficiency
+</code></pre>
+<h3>H3 — Приоритет B04 (Extended W3 + RSI momentum LONG)</h3>
+<pre><code>
+Правило: B04 получает приоритет 1, B02 — приоритет 2, B01 — 3; B03 (W3 class A) — CONTEXT_ONLY
+Основание: O8, O9, O6
+Критерий ACCEPT: B04 Exp net &gt; 0, p &lt; 0.05, N ≥ 50 на новых данных
+Запрет: не повышать статус B04 до P3 по одному прогону (§63: 50+ = FULL CALIBRATION, не promotion)
+</code></pre>
+<h3>H4 — W3 CLASS A не используется как приоритет</h3>
+<pre><code>
+Правило: §13 high-conviction (W3/W1 &lt; 1) понижается до diagnostic-only
+Основание: O6
+Критерий: если на новых данных CLASS A снова покажет PF ≥ 1.8 при N ≥ 40 — гипотеза отклоняется,
+  §13 восстанавливается (симметричное условие, чтобы не подтвердить H4 любой ценой)
+</code></pre>
+<h3>H5 — Cost-aware допуск ветки (новое правило, в каноне отсутствует)</h3>
+<pre><code>
+Правило: ветка допускается к trade только если round_trip_cost / R ≤ 0.05 (5% от R)
+Основание: O1, O4
+Статус: ПРЕДЛАГАЕТСЯ как дополнение к G14 (R:R) — требует правки канона (§10 G14a)
+</code></pre>
+<h3>H6 — Regime-срез в обязательной отчётности</h3>
+<pre><code>
+Правило: к §54 добавить разбивку по regime (D1 above/below EMA200) и по году
+Основание: O11
+Статус: методологическое, не влияет на торговую логику
+</code></pre>
+<h2>4. Validation plan (§64: research sample больше не используется для подтверждения)</h2>
+<table><thead><tr><th>Этап</th><th>Данные</th><th>Что проверяем</th></tr></thead><tbody>
+<tr><td><b>Forward OOS</b></td><td>всё, что после <b>2026-09-15 20:00 UTC</b> (ещё не существует)</td><td>H1–H4 на живых данных, сигналы freeze в момент выдачи (S18)</td></tr>
+<tr><td><b>Независимый инструмент</b></td><td>спот XAUUSD M15 (нужен ваш CSV или доступ к Dukascopy/брокеру)</td><td>воспроизведение O2/O10 на споте, а не на PAXG/фьючерсе</td></tr>
+<tr><td><b>Независимый ТФ</b></td><td>GC=F H1 (730 дней) — уже частично использован в O10</td><td>только как supporting evidence, не как подтверждение</td></tr>
+<tr><td><b>Минимальный объём</b></td><td>N ≥ 153 для Exp ≈ 0.15R (формула freeze G)</td><td>иначе NEEDS_MORE_DATA (§27)</td></tr>
+</tbody></table>
+<p><b>Порог ACCEPT для promotion P2 → P3:</b> forward OOS N ≥ 60, Exp net &gt; 0, p &lt; 0.10 (ослабленный</p>
+<p>порог для малого forward-объёма фиксируется заранее, а не постфактум), rolling ≥ 60% окон Exp&gt;0.</p>
+<h2>5. Предлагаемые изменения статусов (§58) — требуют вашего утверждения</h2>
+<table><thead><tr><th>Component</th><th>Канон v1.8</th><th>Предлагаю</th><th>Основание</th></tr></thead><tbody>
+<tr><td>Elliott W5 (LONG, G_BASE47)</td><td>P2</td><td><b>P2 подтверждён</b> (end-to-end, 11/11 критериев)</td><td>O2, O3</td></tr>
+<tr><td>§25/§82 geometry <code>1 ATR / 1.5R</code></td><td>production candidate</td><td><b>понизить до P1</b></td><td>O1, O4</td></tr>
+<tr><td>§47 geometry <code>2.5 ATR / 1.0R</code></td><td>baseline</td><td><b>повысить до P2 production candidate</b></td><td>O2, O3, O10</td></tr>
+<tr><td>LONG EMA200 + Fib OFF</td><td>P1/P2</td><td><b>P2</b></td><td>O9</td></tr>
+<tr><td>LONG Extended-W3 + RSI (§24)</td><td>P0</td><td><b>P1</b> (не P2: один прогон)</td><td>O8</td></tr>
+<tr><td>W3 CLASS A high-conviction (§13)</td><td>P1</td><td><b>P0 diagnostic</b></td><td>O6</td></tr>
+<tr><td>SHORT RSI + Fib OFF (§16)</td><td>P1</td><td><b>P0</b></td><td>O5</td></tr>
+<tr><td>SHORT H4-aligned (§48)</td><td>P1</td><td><b>P0</b></td><td>O5</td></tr>
+<tr><td>Wyckoff</td><td>P1 contextual</td><td>без изменений (не реализован)</td><td>gap D15</td></tr>
+<tr><td>Full State Machine</td><td>P0 until end-to-end</td><td><b>P2 на PROXY-данных</b>; P3 только после forward OOS на споте</td><td>O2, O13, §4</td></tr>
+</tbody></table>
+<h2>6. Чего делать нельзя (напоминание самому себе и следующему агенту)</h2>
+<ul>
+<li>Промоутить G_BASE47 в production на основании этого прогона: данные <b>PROXY</b> (PAXG), период уже использован.</li>
+<li>Выбирать k=1.5 или 3.0 потому, что они «почти такие же»: первичный k=2.0 зафиксирован a priori.</li>
+<li>Считать, что O10 (GC=F H1) — независимое подтверждение: период пересекается с research sample.</li>
+<li>Отключать SHORT «потому что убыточно» без фиксации, что его evidence просто не дотягивает до sample sufficiency.</li>
+<li>Менять cost model после получения результатов.</li>
+<li>Объединять directional evidence и exit evidence (§17) — геометрия тестируется как единый frozen-профиль.</li>
+</ul>
+<hr>
+<h2>7. Требуется от вас (блокеры)</h2>
+<ol>
+<li><b>Спот XAUUSD M15 за 2022–2026</b> (CSV/parquet) — без него P3 недостижим (PROXY-ограничение).</li>
+<li>Утверждение/отклонение H1–H6 и таблицы статусов §5.</li>
+<li>Решение по §26 канона: трактовка <code>tight</code> (SL не шире invalidation) или <code>wide</code>. Сейчас заморожена <code>tight</code>;</li>
+</ol>
+<p>при <code>wide</code> геометрия 1 ATR неторгуема (O12), а STRUCT-exit никогда не наступает (O14).</p>
+<ol>
+<li>Формальное определение Wyckoff-флагa (gap D15), если он нужен в v2.</li>
+</ol></div></main><footer>spec v1.8 · freeze v2 · engine v2 · собрано 2026-09-16 10:46 UTC<br>build 260916-89364b · не является инвестиционной рекомендацией.</footer><script>
+(function(){
+  var t = localStorage.getItem("xauusd_theme");
+  if (t === "tech") document.documentElement.classList.add("tech");
+  window.toggleTheme = function(){
+    var on = document.documentElement.classList.toggle("tech");
+    localStorage.setItem("xauusd_theme", on ? "tech" : "magic");
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = on ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  };
+  document.addEventListener("DOMContentLoaded", function(){
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = document.documentElement.classList.contains("tech") ? "🪄 Зачарованный режим" : "⚙ Строгий режим";
+  });
+})();
+</script></body></html>
